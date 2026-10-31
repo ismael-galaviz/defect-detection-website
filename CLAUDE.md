@@ -11,7 +11,7 @@ its format; delete entries whose *Remove when* holds. A `SessionStart` hook flag
 
 ## Project
 - VeritX Vision marketing site + invite-only customer portal. Stack: React 18 + Vite 5,
-  plain CSS, Vitest, Vercel (`docs/decisions/001-stack.md`). Backend (in progress, spec
+  plain CSS, Vitest, Vercel (`docs/decisions/001-stack.md`). Backend (spec
   `specs/001-backend`): FastAPI + Postgres in `server/`, on Railway (`docs/decisions/002-backend-stack.md`,
   `docs/deployment/environments.md`).
 - Read `docs/architecture/SDD.md` before changing content or behavior — §10 holds established
@@ -62,8 +62,8 @@ Every document lives in a `docs/` subfolder; every new one gets a row in `docs/R
   change must update all three.
 - Every page route is a `#/...` hash fragment; don't add path-based routes. The only server path is
   `/api/*`, rewritten by `vercel.json` to Railway (and proxied by Vite in dev) so the API is same-origin.
-- The contact form, calculator results, meeting booking and portal accounts are real (backend
-  Stories 1–3). Only the Vision Home support-ticket form is still client-only until Story 4.
+- Every form on the site is real now (backend Stories 1–4): contact, calculator results, meeting
+  booking, portal accounts and support tickets. Staff administer through the CLI, not a web UI.
 - Portal accounts are invite-only (staff CLI); there is no self-registration — don't add one
   without a spec.
 - Emails to visitor-supplied addresses must never echo text the visitor typed (name, company,

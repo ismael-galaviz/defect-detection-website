@@ -127,7 +127,7 @@ Phases 1–2 ship inside PR 1 together with US1.
 - [X] T047 [US4] Implement `server/app/uploads.py` (size limit, magic-byte sniffing, filename sanitizing)
 - [X] T048 [US4] Implement `server/app/routes/tickets.py`: `POST /api/attachments`, `GET /api/attachments/{id}`, `POST /api/tickets` (staff email with attachments via `google.send_email`), and add tickets to `GET /api/me`
 - [X] T049 [US4] Add CLI `ticket-status`, `list tickets`, and unlinked-attachment cleanup to `cleanup` in `server/app/cli.py`
-- [ ] T050 [US4] Update `SupportTicketForm` in `src/VisionHomePage.jsx`: file input (accept png/jpeg/pdf, max 3, client-side size check), upload each file then create ticket, per-file errors; ticket list with status and download links; copy in es/en/fr in `src/translations.js`
+- [X] T050 [US4] Update `SupportTicketForm` in `src/VisionHomePage.jsx`: file input (accept png/jpeg/pdf, max 3, client-side size check), upload each file then create ticket, per-file errors; ticket list with status and download links; copy in es/en/fr in `src/translations.js`
 
 **Checkpoint**: quickstart step 4 passes → **PR 4** (`Closes #8`, `Closes #10`).
 
@@ -135,7 +135,7 @@ Phases 1–2 ship inside PR 1 together with US1.
 
 ## Phase 7: Polish & cross-cutting (in the PR where each becomes true)
 
-- [ ] T051 [P] Update `docs/architecture/SDD.md` §2 (stack), §4 (routes), §11 (closed gaps), §14 (portal is real; replace §14.8 table)
+- [X] T051 [P] Update `docs/architecture/SDD.md` §2 (stack), §4 (routes), §11 (closed gaps), §14 (portal is real; replace §14.8 table)
 - [X] T052 [P] Add `GOTCHA.md` entries: Google OAuth "Testing" status expires refresh tokens after 7 days; Vercel previews call the production API
 - [X] T053 [P] Add `CLAUDE.md` trap: emails to visitor-supplied addresses never echo free text (R10)
 - [ ] T054 Run `quickstart.md` end-to-end on the Vercel preview and record results in each PR's test plan

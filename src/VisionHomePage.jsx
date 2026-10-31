@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useLanguage, localeFor } from './i18n.jsx'
 import { Icon } from './icons.jsx'
-import { useAuthSession } from './auth.js'
+import { refreshSession, useAuthSession } from './auth.js'
+import { ApiError, errorMessage, post, upload } from './api.js'
+import { ACCEPT, fileProblem } from './tickets.js'
 
 function formatDate(iso, lang) {
   return new Intl.DateTimeFormat(localeFor(lang), {
@@ -15,15 +17,50 @@ function formatCurrency(amount, currency, lang) {
   return new Intl.NumberFormat(localeFor(lang), { style: 'currency', currency }).format(Number(amount))
 }
 
-function SupportTicketForm({ s }) {
+function SupportTicketForm({ s, formErrors }) {
   const [subject, setSubject] = useState('')
   const [description, setDescription] = useState('')
-  const [priority, setPriority] = useState('normal')
+  const [priority, setPriority] = useState('medium')
+  const [files, setFiles] = useState([])
+  const [error, setError] = useState(null)
+  const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
 
-  function handleSubmit(e) {
+  function fileMessage(problem) {
+    return s[problem.key].replace('{file}', problem.file || '')
+  }
+
+  function handleFiles(e) {
+    const chosen = Array.from(e.target.files)
+    const problem = fileProblem(chosen)
+    setError(problem ? fileMessage(problem) : null)
+    setFiles(problem ? [] : chosen)
+    if (problem) e.target.value = ''
+  }
+
+  async function handleSubmit(e) {
     e.preventDefault()
-    setSent(true)
+    setError(null)
+    setSending(true)
+    try {
+      const ids = []
+      for (const file of files) {
+        try {
+          ids.push((await upload('/attachments', file)).id)
+        } catch (err) {
+          if (err.error === 'too_large') throw new Error(fileMessage({ key: 'tooLarge', file: file.name }))
+          if (err.error === 'unsupported_type') throw new Error(fileMessage({ key: 'unsupportedType', file: file.name }))
+          throw err
+        }
+      }
+      await post('/tickets', { subject, description, priority, attachment_ids: ids })
+      setSent(true)
+      refreshSession() // reload Vision Home so the new ticket appears in the list
+    } catch (err) {
+      setError(err instanceof ApiError ? errorMessage(err, formErrors) : err.message)
+    } finally {
+      setSending(false)
+    }
   }
 
   if (sent) {
@@ -37,6 +74,7 @@ function SupportTicketForm({ s }) {
         <input
           id="ticketSubject"
           type="text"
+          maxLength={200}
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder={s.ticketSubjectPlaceholder}
@@ -48,6 +86,7 @@ function SupportTicketForm({ s }) {
         <textarea
           id="ticketDescription"
           rows="3"
+          maxLength={5000}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={s.ticketDescriptionPlaceholder}
@@ -58,12 +97,42 @@ function SupportTicketForm({ s }) {
         <label htmlFor="ticketPriority">{s.ticketPriority}</label>
         <select id="ticketPriority" value={priority} onChange={(e) => setPriority(e.target.value)}>
           <option value="low">{s.priorityOptions.low}</option>
-          <option value="normal">{s.priorityOptions.normal}</option>
+          <option value="medium">{s.priorityOptions.medium}</option>
           <option value="high">{s.priorityOptions.high}</option>
         </select>
       </div>
-      <button type="submit" className="btn btn-dark">{s.ticketSubmit}</button>
+      <div className="form-row">
+        <label htmlFor="ticketFiles">{s.attachLabel}</label>
+        <input id="ticketFiles" type="file" multiple accept={ACCEPT.join(',')} onChange={handleFiles} />
+        <p className="field-hint">{s.attachHint}</p>
+      </div>
+      {error && <p className="field-error" role="alert">{error}</p>}
+      <button type="submit" className="btn btn-dark" disabled={sending}>
+        {sending ? s.ticketSubmitting : s.ticketSubmit}
+      </button>
     </form>
+  )
+}
+
+function TicketList({ tickets, s, lang }) {
+  if (tickets.length === 0) return <p>{s.noTickets}</p>
+  return (
+    <ul className="vh-detail-list vh-ticket-list">
+      {tickets.map((tk) => (
+        <li key={tk.id}>
+          <div>
+            <strong>#{tk.id} · {tk.subject}</strong>{' '}
+            <span className="vh-pill">{s.ticketStatus[tk.status]}</span>
+          </div>
+          <div className="field-hint">
+            {formatDate(tk.created_at.slice(0, 10), lang)} · {s.ticketPriority}: {s.priorityOptions[tk.priority]}
+          </div>
+          {tk.attachments.map((f) => (
+            <div key={f.id}><a href={`/api/attachments/${f.id}`} download={f.filename}>{f.filename}</a></div>
+          ))}
+        </li>
+      ))}
+    </ul>
   )
 }
 
@@ -175,9 +244,11 @@ export default function VisionHomePage() {
                   {v.support.cta}
                 </button>
               ) : (
-                <SupportTicketForm s={v.support} />
+                <SupportTicketForm s={v.support} formErrors={t.formErrors} />
               )}
               <p className="field-hint">{v.support.responseTime}</p>
+              <h4>{v.support.ticketsTitle}</h4>
+              <TicketList tickets={me.tickets} s={v.support} lang={lang} />
             </div>
 
             <div className="vh-card">

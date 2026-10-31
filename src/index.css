@@ -1573,3 +1573,6 @@ form.auth-card { margin: 0; }
   height: 1px;
   overflow: hidden;
 }
+
+.vh-ticket-list li { padding: 8px 0; border-bottom: 1px solid var(--gray-200, #e5e7eb); }
+.vh-ticket-list li:last-child { border-bottom: 0; }

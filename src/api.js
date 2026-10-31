@@ -41,3 +41,18 @@ export function errorMessage(err, formErrors) {
   if (err?.error === 'invalid') return formErrors.invalid
   return formErrors.network
 }
+
+// Multipart upload of one file (field "file"); the browser sets the multipart boundary.
+export async function upload(path, file) {
+  const body = new FormData()
+  body.append('file', file)
+  let res
+  try {
+    res = await fetch(`/api${path}`, { method: 'POST', credentials: 'same-origin', body })
+  } catch {
+    throw new ApiError(0, 'network')
+  }
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new ApiError(res.status, data.error || 'server_error', data.fields || {})
+  return data
+}

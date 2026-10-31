@@ -1393,9 +1393,9 @@ casually reverse them without the user re-confirming — re-litigating them wast
   `<a>`, specifically because no company LinkedIn page was provided (see §10.26). Wire it up as a real
   link (and probably add `target="_blank" rel="noopener noreferrer"`, matching the WhatsApp link
   pattern) as soon as the user gives you the actual URL — don't fabricate one.
-- **Customer portal accounts are real (§14, Story 3); support tickets are not yet.** Invite-only
-  sign-in, password reset, sessions and Vision Home data come from the backend. The Vision Home
-  support-ticket form is still client-only until Story 4.
+- **The customer portal is real (§14, Stories 3–4)**: invite-only sign-in, password reset, sessions,
+  Vision Home data and support tickets come from the backend. Still out of scope: an admin web UI
+  (staff use the CLI), online payments, and staff replies inside the portal (they reply by email).
 
 ---
 
@@ -1485,8 +1485,12 @@ answer 404); Origin check on state-changing requests; audit rows (`audit_log`) f
 failure, sign-out, invite sent/accepted, reset requested/done and disable/enable.
 
 ### 14.6 Support tickets
-Story 4 in `specs/001-backend/spec.md`; until it ships, the ticket form in Vision Home is still
-client-only (it shows a success message but sends nothing).
+Signed-in users open tickets from Vision Home (subject, description, priority low/medium/high, up to
+3 PNG/JPEG/PDF files of ≤2 MB). Files upload one per request to `/api/attachments` (type judged by
+content on the server; `src/tickets.js` only pre-checks), then `/api/tickets` links them. Staff get an
+email with the files and the user as reply-to, answer from Gmail, and change the status with
+`python -m app.cli ticket-status --id N --status in_progress|resolved|closed`. Every user of the
+company sees the company's tickets and can download their files; other companies get 404.
 
 ### 14.7 Mexico locator map (`MexicoMap.jsx` / `mexicoMapData.js`)
 

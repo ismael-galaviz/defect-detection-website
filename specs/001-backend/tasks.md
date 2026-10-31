@@ -93,16 +93,16 @@ Phases 1–2 ship inside PR 1 together with US1.
 **Independent test**: quickstart.md step 3.
 
 ### Tests (write first)
-- [ ] T031 [P] [US3] Tests in `server/tests/test_security.py`: Argon2id hash/verify/rehash; token create/hash/expire/single-use; new token invalidates older ones; session expiry (7 d absolute, 24 h idle); password policy (≥12 chars, common list)
-- [ ] T032 [P] [US3] Tests in `server/tests/test_auth.py`: invite → accept → signed in; used/expired invite → 410; login wrong password and unknown email give identical 401; 5 failures/15 min → 429 even with right password; forgot returns 202 for unknown email; reset ends all sessions; logout invalidates cookie; disabled user's session rejected; cookie flags `HttpOnly; Secure; SameSite=Lax; Path=/api`; audit rows written for every event in FR-023
-- [ ] T033 [P] [US3] Tests in `server/tests/test_tenancy.py`: two companies; `GET /api/me` returns only own subscriptions/payments; no endpoint exposes another company's records
-- [ ] T034 [P] [US3] Tests in `server/tests/test_cli.py`: company-add, invite (new / re-invite / refuses active), user-disable ends sessions, subscription-add/set, payment-add validation
+- [X] T031 [P] [US3] Tests in `server/tests/test_security.py`: Argon2id hash/verify/rehash; token create/hash/expire/single-use; new token invalidates older ones; session expiry (7 d absolute, 24 h idle); password policy (≥12 chars, common list)
+- [X] T032 [P] [US3] Tests in `server/tests/test_auth.py`: invite → accept → signed in; used/expired invite → 410; login wrong password and unknown email give identical 401; 5 failures/15 min → 429 even with right password; forgot returns 202 for unknown email; reset ends all sessions; logout invalidates cookie; disabled user's session rejected; cookie flags `HttpOnly; Secure; SameSite=Lax; Path=/api`; audit rows written for every event in FR-023
+- [X] T033 [P] [US3] Tests in `server/tests/test_tenancy.py`: two companies; `GET /api/me` returns only own subscriptions/payments; no endpoint exposes another company's records
+- [X] T034 [P] [US3] Tests in `server/tests/test_cli.py`: company-add, invite (new / re-invite / refuses active), user-disable ends sessions, subscription-add/set, payment-add validation
 
 ### Implementation
-- [ ] T035 [US3] Add models `Company`, `User`, `Token`, `Session`, `Subscription`, `Payment`, `AuditLog` in `server/app/models.py` and migration `server/migrations/versions/0003_accounts.py` (indexes per data-model.md)
-- [ ] T036 [US3] Implement `server/app/security.py`: hashing, token and session helpers, `current_user` dependency (validates cookie, idle/absolute expiry, updates `last_seen_at`), audit helper, login-lockout and reset-limit queries (R6)
-- [ ] T037 [US3] Implement `server/app/routes/auth.py`: `/api/auth/login`, `/logout`, `/invite/{token}`, `/accept-invite`, `/forgot`, `/reset`, and `GET /api/me` per contracts/api.md; invite/reset emails in user's lang in `server/app/emails.py`
-- [ ] T038 [US3] Add CLI commands `company-add`, `invite`, `user-disable`, `user-enable`, `subscription-add`, `subscription-set`, `payment-add`, `list companies|users`, `cleanup` (sessions/tokens) in `server/app/cli.py`
+- [X] T035 [US3] Add models `Company`, `User`, `Token`, `Session`, `Subscription`, `Payment`, `AuditLog` in `server/app/models.py` and migration `server/migrations/versions/0003_accounts.py` (indexes per data-model.md)
+- [X] T036 [US3] Implement `server/app/security.py`: hashing, token and session helpers, `current_user` dependency (validates cookie, idle/absolute expiry, updates `last_seen_at`), audit helper, login-lockout and reset-limit queries (R6)
+- [X] T037 [US3] Implement `server/app/routes/auth.py`: `/api/auth/login`, `/logout`, `/invite/{token}`, `/accept-invite`, `/forgot`, `/reset`, and `GET /api/me` per contracts/api.md; invite/reset emails in user's lang in `server/app/emails.py`
+- [X] T038 [US3] Add CLI commands `company-add`, `invite`, `user-disable`, `user-enable`, `subscription-add`, `subscription-set`, `payment-add`, `list companies|users`, `cleanup` (sessions/tokens) in `server/app/cli.py`
 - [ ] T039 [US3] Rewrite `src/auth.js` to call the API (`login`, `logout`, `getInvite`, `acceptInvite`, `requestPasswordReset`, `resetPassword`, `fetchMe`) keeping `useAuthSession()`'s shape; remove localStorage auth, `IS_DUMMY_LOGIN_ENABLED`, `DEMO_ACCOUNT`; replace `src/auth.test.js` with tests of the remaining pure helpers (e.g. `isValidEmail`) or delete if none remain
 - [ ] T040 [US3] Create `src/AcceptInvitePage.jsx` (`#/accept-invite?token=`: show email/company, set password, sign in) and route it in `src/App.jsx`
 - [ ] T041 [US3] Update `src/LoginPage.jsx` (email only, "accounts are by invitation" note, error codes) and `src/ForgotPasswordPage.jsx` (request + reset via API)

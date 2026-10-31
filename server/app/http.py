@@ -6,6 +6,14 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 
+class ApiError(Exception):
+    """Raise from routes or dependencies to answer with the contract's error format."""
+
+    def __init__(self, status: int, code: str, **extra):
+        super().__init__(code)
+        self.status, self.code, self.extra = status, code, extra
+
+
 def error(status: int, code: str, **extra) -> JSONResponse:
     """Error body per contracts/api.md: {"error": code, ...}."""
     return JSONResponse({"error": code, **extra}, status_code=status)

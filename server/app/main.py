@@ -9,7 +9,7 @@ from fastapi import APIRouter, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 
 from app.config import get_settings
-from app.http import error
+from app.http import ApiError, error
 
 
 class JsonFormatter(logging.Formatter):
@@ -73,15 +73,19 @@ def create_app() -> FastAPI:
     async def validation_handler(_request, exc: RequestValidationError):
         return error(422, "invalid", fields=_field_errors(exc))
 
+    @app.exception_handler(ApiError)
+    async def api_error_handler(_request, exc: ApiError):
+        return error(exc.status, exc.code, **exc.extra)
+
     api = APIRouter(prefix="/api")
 
     @api.get("/health")
     def health():
         return {"ok": True}
 
-    from app.routes import booking, forms
-    api.include_router(forms.router)
-    api.include_router(booking.router)
+    from app.routes import auth, booking, forms
+    for module in (forms, booking, auth):
+        api.include_router(module.router)
     app.include_router(api)
     return app
 

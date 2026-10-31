@@ -207,3 +207,44 @@ def staff_booking(payload: dict) -> tuple[str, str]:
         lines += ["", f"Prefiere {payload['video_tool']}: envíale otro enlace si hace falta."]
     lines += ["", "Responde a este correo para contestarle directamente."]
     return subject, "\n".join(lines) + "\n"
+
+
+# Invite and reset emails go to addresses staff entered or that already have an account; they
+# still carry no visitor-typed text beyond the account holder's own name (entered by staff).
+INVITE = {
+    "es": ("Tu acceso a VeritX Vision Home",
+           "Hola {name},\n\nVeritX Vision te dio acceso a Vision Home para {company}. Crea tu "
+           "contraseña con este enlace (válido 7 días, un solo uso):\n\n{link}\n\nTu usuario es "
+           "este correo electrónico."),
+    "en": ("Your access to VeritX Vision Home",
+           "Hello {name},\n\nVeritX Vision has given you access to Vision Home for {company}. "
+           "Set your password with this link (valid for 7 days, single use):\n\n{link}\n\nYour "
+           "username is this email address."),
+    "fr": ("Votre accès à VeritX Vision Home",
+           "Bonjour {name},\n\nVeritX Vision vous a donné accès à Vision Home pour {company}. "
+           "Créez votre mot de passe avec ce lien (valable 7 jours, usage unique) :\n\n{link}\n\n"
+           "Votre identifiant est cette adresse e-mail."),
+}
+
+RESET = {
+    "es": ("Restablece tu contraseña de VeritX Vision",
+           "Recibimos una solicitud para restablecer tu contraseña. Usa este enlace (válido 30 "
+           "minutos, un solo uso):\n\n{link}\n\nSi no fuiste tú, ignora este correo."),
+    "en": ("Reset your VeritX Vision password",
+           "We received a request to reset your password. Use this link (valid for 30 minutes, "
+           "single use):\n\n{link}\n\nIf this wasn't you, ignore this email."),
+    "fr": ("Réinitialisez votre mot de passe VeritX Vision",
+           "Nous avons reçu une demande de réinitialisation de votre mot de passe. Utilisez ce "
+           "lien (valable 30 minutes, usage unique) :\n\n{link}\n\nSi ce n'était pas vous, "
+           "ignorez cet e-mail."),
+}
+
+
+def invite(lang: str, name: str, company: str, link: str) -> tuple[str, str]:
+    subject, body = INVITE[lang]
+    return subject, f"{body.format(name=name, company=company, link=link)}\n\n{SIGNATURE[lang]}\n"
+
+
+def reset(lang: str, link: str) -> tuple[str, str]:
+    subject, body = RESET[lang]
+    return subject, f"{body.format(link=link)}\n\n{SIGNATURE[lang]}\n"

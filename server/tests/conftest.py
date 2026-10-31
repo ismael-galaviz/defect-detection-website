@@ -57,5 +57,36 @@ def google():
 
 @pytest.fixture
 def client(google):
-    with TestClient(app, headers={"Origin": SITE_ORIGIN}) as c:
+    # https so the Secure session cookie is sent back, as in production.
+    with TestClient(app, base_url="https://testserver", headers={"Origin": SITE_ORIGIN}) as c:
         yield c
+
+
+@pytest.fixture
+def db():
+    from app.db import new_session
+
+    with new_session() as session:
+        yield session
+
+
+@pytest.fixture
+def make_user(db):
+    """Create a company (if needed) and a user. Active users get the given password."""
+    from app.models import Company, User
+    from app.security import hash_password
+
+    def make(email="ana@example.com", password="a-long-password-1", status="active",
+             company="Textiles Ruiz", name="Ana Ruiz", lang="es"):
+        comp = db.query(Company).filter_by(name=company).one_or_none()
+        if comp is None:
+            comp = Company(name=company)
+            db.add(comp)
+            db.flush()
+        user = User(company_id=comp.id, email=email, name=name, status=status, lang=lang,
+                    password_hash=hash_password(password) if status != "invited" else None)
+        db.add(user)
+        db.commit()
+        return user
+
+    return make

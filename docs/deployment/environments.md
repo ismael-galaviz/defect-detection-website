@@ -6,8 +6,8 @@
 | Backend | Railway service, root directory `server` | `main` | Postgres in the same Railway project |
 
 Vercel rewrite destinations can't read env vars, so **previews call the production backend**
-until a staging environment exists. `vercel.json` holds the placeholder `RAILWAY_SERVICE_URL`
-until the Railway service exists — replace it with the service's public domain.
+until a staging environment exists. Backend public domain:
+`https://defect-detection-website-production.up.railway.app` (also in `vercel.json`).
 
 ## Railway service settings
 - Root directory: `server`

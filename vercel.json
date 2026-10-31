@@ -1,5 +1,5 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://RAILWAY_SERVICE_URL/api/:path*" }
+    { "source": "/api/:path*", "destination": "https://defect-detection-website-production.up.railway.app/api/:path*" }
   ]
 }

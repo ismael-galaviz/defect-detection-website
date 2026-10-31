@@ -5,19 +5,24 @@ from app import emails
 FREE_TEXT = {
     "name": "ZZNAMEZZ http://spam.example", "company": "ZZCOMPANYZZ",
     "message": "ZZMESSAGEZZ buy now", "country": "ZZCOUNTRYZZ", "stage": "ZZSTAGEZZ",
-    "email": "visitor@example.com", "preferred_slot": "2026-11-03 10:00", "video_tool": "ZZTOOLZZ",
+    "email": "visitor@example.com", "video_tool": "ZZTOOLZZ",
 }
 INPUTS = {"defects": {"rateBefore": 1.2, "rateAfter": 0.2, "volume": 500000, "costPerDefect": 150}}
 RESULTS = {"defects": 750000, "total": 750000}
 
 
 @pytest.mark.parametrize("lang", ["es", "en", "fr"])
-@pytest.mark.parametrize("meeting", [False, True])
-def test_visitor_confirmation_never_echoes_free_text(lang, meeting):
-    subject, text = emails.visitor_contact(lang, meeting=meeting)
-    for value in FREE_TEXT.values():
-        if value != "visitor@example.com" and value != "2026-11-03 10:00":
+def test_visitor_confirmation_never_echoes_free_text(lang):
+    for subject, text in (emails.visitor_contact(lang),
+                          emails.visitor_booking(lang, "2026-11-04T10:00:00-06:00"),
+                          emails.EVENT_COPY[lang]):
+        for value in FREE_TEXT.values():
             assert value not in subject and value not in text
+
+
+@pytest.mark.parametrize("lang", ["es", "en", "fr"])
+def test_visitor_booking_shows_the_slot(lang):
+    assert "2026-11-04 10:00" in emails.visitor_booking(lang, "2026-11-04T10:00:00-06:00")[1]
 
 
 @pytest.mark.parametrize("lang", ["es", "en", "fr"])
@@ -29,7 +34,7 @@ def test_visitor_calculator_has_numbers_and_labels_only(lang):
 
 
 def test_languages_differ():
-    es, en, fr = (emails.visitor_contact(lang, meeting=False) for lang in ("es", "en", "fr"))
+    es, en, fr = (emails.visitor_contact(lang) for lang in ("es", "en", "fr"))
     assert es != en and fr != en
 
 

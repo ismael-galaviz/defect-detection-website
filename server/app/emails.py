@@ -23,18 +23,6 @@ VISITOR_CONTACT = {
            "répondrons sous un jour ouvré."),
 }
 
-VISITOR_MEETING_REQUEST = {
-    "es": ("Recibimos tu solicitud de reunión — VeritX Vision",
-           "Gracias por contactar a VeritX Vision.\n\nRecibimos tu solicitud de reunión y te "
-           "confirmaremos el horario por correo en breve."),
-    "en": ("We received your meeting request — VeritX Vision",
-           "Thank you for contacting VeritX Vision.\n\nWe received your meeting request and will "
-           "confirm the time by email shortly."),
-    "fr": ("Nous avons reçu votre demande de rendez-vous — VeritX Vision",
-           "Merci d'avoir contacté VeritX Vision.\n\nNous avons bien reçu votre demande de "
-           "rendez-vous et vous confirmerons l'horaire par e-mail sous peu."),
-}
-
 # Labels mirror src/translations.js → calculatorPage.sections (keep in sync when copy changes).
 CALC_LABELS = {
     "es": {
@@ -123,8 +111,8 @@ def money(value: float, currency: str, lang: str) -> str:
     return f"{_number(round(value), lang, 0)} {currency}"
 
 
-def visitor_contact(lang: str, *, meeting: bool) -> tuple[str, str]:
-    subject, body = (VISITOR_MEETING_REQUEST if meeting else VISITOR_CONTACT)[lang]
+def visitor_contact(lang: str) -> tuple[str, str]:
+    subject, body = VISITOR_CONTACT[lang]
     return subject, f"{body}\n\n{SIGNATURE[lang]}\n"
 
 
@@ -150,19 +138,14 @@ def visitor_calculator(lang: str, currency: str, inputs: dict, results: dict) ->
 
 _STAFF_FIELDS = (
     ("name", "Nombre"), ("company", "Empresa"), ("email", "Correo"), ("country", "País"),
-    ("stage", "Etapa"), ("preferred_slot", "Horario solicitado (CDMX)"),
-    ("video_tool", "Herramienta de videollamada"), ("message", "Mensaje"),
+    ("stage", "Etapa"), ("video_tool", "Herramienta de videollamada"), ("message", "Mensaje"),
 )
 
 
 def staff_contact(payload: dict) -> tuple[str, str]:
-    meeting = bool(payload.get("preferred_slot"))
-    kind = "Solicitud de reunión" if meeting else "Nuevo mensaje"
-    subject = f"[Sitio] {kind}: {payload.get('name', '')} ({payload.get('company', '')})"
-    lines = [f"{kind} desde el formulario de contacto del sitio.", ""]
+    subject = f"[Sitio] Nuevo mensaje: {payload.get('name', '')} ({payload.get('company', '')})"
+    lines = ["Nuevo mensaje desde el formulario de contacto del sitio.", ""]
     lines += [f"{label}: {payload[key]}" for key, label in _STAFF_FIELDS if payload.get(key)]
-    if meeting:
-        lines += ["", "La agenda en vivo aún no está activa: confirma el horario al visitante."]
     lines += ["", "Responde a este correo para contestarle directamente."]
     return subject, "\n".join(lines) + "\n"
 

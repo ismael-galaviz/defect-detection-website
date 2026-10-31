@@ -393,7 +393,7 @@ export const translations = {
       whatsappLabel: 'Chat on WhatsApp',
       whatsapp: '+52 246 241 6056',
       success: "Thanks for reaching out! We'll get back to you within one business day to schedule your demo.",
-      successSchedule: "Your appointment request has been received! We'll confirm by email shortly.",
+      successSchedule: "Your meeting is booked! You'll receive a calendar invitation with the video-call link by email.",
       appointment: {
         modeMessage: 'Send a message',
         modeSchedule: 'Schedule a meeting',
@@ -406,6 +406,11 @@ export const translations = {
         videoTool: 'Preferred video call tool',
         videoToolPlaceholder: 'Select a tool',
         videoToolOptions: ['Zoom', 'Google Meet', 'Microsoft Teams', 'WhatsApp Video', 'Other'],
+        loading: "Loading available times…",
+        slotTaken: "Sorry, that time was just taken. Please pick another one.",
+        unavailable: "Live booking isn't available right now.",
+        sendAsMessage: "Send it as a message instead",
+        noSlots: "No times available on this day.",
       },
       privacy: {
         title: 'How we use your information',
@@ -1048,7 +1053,7 @@ export const translations = {
       whatsappLabel: 'Chatea por WhatsApp',
       whatsapp: '+52 246 241 6056',
       success: '¡Gracias por contactarnos! Te responderemos en un día hábil para agendar tu demo.',
-      successSchedule: '¡Tu solicitud de cita fue recibida! Te confirmaremos por correo en breve.',
+      successSchedule: '¡Tu reunión quedó agendada! Recibirás por correo una invitación de calendario con el enlace de videollamada.',
       appointment: {
         modeMessage: 'Enviar un mensaje',
         modeSchedule: 'Agendar una cita',
@@ -1061,6 +1066,11 @@ export const translations = {
         videoTool: 'Herramienta de videollamada preferida',
         videoToolPlaceholder: 'Selecciona una herramienta',
         videoToolOptions: ['Zoom', 'Google Meet', 'Microsoft Teams', 'WhatsApp Video', 'Otra'],
+        loading: "Cargando horarios disponibles…",
+        slotTaken: "Ese horario se acaba de ocupar. Elige otro, por favor.",
+        unavailable: "La agenda en línea no está disponible en este momento.",
+        sendAsMessage: "Enviarlo como mensaje",
+        noSlots: "No hay horarios disponibles este día.",
       },
       privacy: {
         title: 'Cómo usamos tu información',
@@ -1704,7 +1714,7 @@ export const translations = {
       whatsappLabel: 'Discuter sur WhatsApp',
       whatsapp: '+52 246 241 6056',
       success: 'Merci de nous avoir contactés ! Nous vous répondrons sous un jour ouvré pour programmer votre démo.',
-      successSchedule: 'Votre demande de rendez-vous a été reçue ! Nous confirmerons par e-mail sous peu.',
+      successSchedule: 'Votre rendez-vous est confirmé ! Vous recevrez par e-mail une invitation d\'agenda avec le lien de visioconférence.',
       appointment: {
         modeMessage: 'Envoyer un message',
         modeSchedule: 'Planifier un rendez-vous',
@@ -1717,6 +1727,11 @@ export const translations = {
         videoTool: 'Outil de visioconférence préféré',
         videoToolPlaceholder: 'Sélectionnez un outil',
         videoToolOptions: ['Zoom', 'Google Meet', 'Microsoft Teams', 'WhatsApp Vidéo', 'Autre'],
+        loading: "Chargement des créneaux disponibles…",
+        slotTaken: "Ce créneau vient d'être pris. Choisissez-en un autre, s'il vous plaît.",
+        unavailable: "La prise de rendez-vous en ligne n'est pas disponible pour le moment.",
+        sendAsMessage: "L'envoyer comme message",
+        noSlots: "Aucun créneau disponible ce jour-là.",
       },
       privacy: {
         title: 'Comment nous utilisons vos informations',

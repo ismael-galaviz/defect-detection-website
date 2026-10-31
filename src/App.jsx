@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { LanguageProvider, useLanguage, localeFor } from './i18n.jsx'
 import { Icon } from './icons.jsx'
-import { errorMessage, post } from './api.js'
+import { errorMessage, get, post } from './api.js'
+import { BOOKING_DAYS_AHEAD, groupSlotsByDate, toISODate } from './booking.js'
 import { useAuthSession, logout } from './auth.js'
 import DemoPage from './DemoPage.jsx'
 import CalculatorPage from './CalculatorPage.jsx'
@@ -413,22 +414,9 @@ function Specs() {
 }
 
 const MEXICO_TZ = 'America/Mexico_City'
-const APPT_TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '16:00', '17:00']
 
 function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
-}
-function isWeekend(d) {
-  const day = d.getDay()
-  return day === 0 || day === 6
-}
-function isPastDay(d, today) {
-  const dd = new Date(d.getFullYear(), d.getMonth(), d.getDate())
-  const tt = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-  return dd < tt
-}
-function toISODate(d) {
-  return [d.getFullYear(), d.getMonth() + 1, d.getDate()].map((n) => String(n).padStart(2, '0')).join('-')
 }
 function formatSlotTime(hhmm, lang) {
   const [h, m] = hhmm.split(':').map(Number)
@@ -436,7 +424,7 @@ function formatSlotTime(hhmm, lang) {
   return d.toLocaleTimeString(localeFor(lang), { hour: 'numeric', minute: '2-digit' })
 }
 
-function AppointmentPicker({ a, lang, selectedDate, selectedTime, onSelectDate, onSelectTime }) {
+function AppointmentPicker({ a, lang, slotsByDate, selectedDate, selectedTime, onSelectDate, onSelectTime }) {
   const today = useMemo(() => new Date(), [])
   const [viewMonth, setViewMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1))
 
@@ -469,6 +457,7 @@ function AppointmentPicker({ a, lang, selectedDate, selectedTime, onSelectDate, 
   return (
     <div className="appt-picker">
       <p className="appt-timezone">{a.timezoneNote} · {a.currentTime}: {currentMexicoTime}</p>
+      {!slotsByDate && <p className="field-hint" role="status">{a.loading}</p>}
 
       <div className="appt-cal">
         <div className="appt-cal-nav">
@@ -491,7 +480,7 @@ function AppointmentPicker({ a, lang, selectedDate, selectedTime, onSelectDate, 
         <div className="appt-cal-grid">
           {cells.map((d, i) => {
             if (!d) return <span key={i} className="appt-day empty" aria-hidden="true" />
-            const disabled = isWeekend(d) || isPastDay(d, today)
+            const disabled = !slotsByDate?.[toISODate(d)]
             const selected = selectedDate && isSameDay(d, selectedDate)
             const isToday = isSameDay(d, today)
             return (
@@ -513,14 +502,14 @@ function AppointmentPicker({ a, lang, selectedDate, selectedTime, onSelectDate, 
         <div className="appt-times">
           <p className="appt-times-label">{a.selectTime}</p>
           <div className="appt-times-grid">
-            {APPT_TIME_SLOTS.map((slot) => (
+            {(slotsByDate?.[toISODate(selectedDate)] || []).map(({ time }) => (
               <button
                 type="button"
-                key={slot}
-                className={`appt-time${selectedTime === slot ? ' selected' : ''}`}
-                onClick={() => onSelectTime(slot)}
+                key={time}
+                className={`appt-time${selectedTime === time ? ' selected' : ''}`}
+                onClick={() => onSelectTime(time)}
               >
-                {formatSlotTime(slot, lang)}
+                {formatSlotTime(time, lang)}
               </button>
             ))}
           </div>
@@ -547,6 +536,8 @@ function Contact() {
   const [attemptedSubmit, setAttemptedSubmit] = useState(false)
   const [sending, setSending] = useState(false)
   const [formError, setFormError] = useState('')
+  const [slotsByDate, setSlotsByDate] = useState(null)
+  const [calendarDown, setCalendarDown] = useState(false)
   const successRef = useRef(null)
   const f = t.contact.form
   const a = t.contact.appointment
@@ -555,6 +546,23 @@ function Contact() {
   useEffect(() => {
     if (submitted) successRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [submitted])
+
+  async function loadSlots() {
+    const today = new Date()
+    const last = new Date(today.getFullYear(), today.getMonth(), today.getDate() + BOOKING_DAYS_AHEAD)
+    setSlotsByDate(null)
+    try {
+      const { slots } = await get(`/availability?from=${toISODate(today)}&to=${toISODate(last)}`)
+      setSlotsByDate(groupSlotsByDate(slots))
+      setCalendarDown(false)
+    } catch {
+      setCalendarDown(true)
+    }
+  }
+
+  useEffect(() => {
+    if (mode === 'schedule' && !slotsByDate && !calendarDown) loadSlots()
+  }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -574,18 +582,27 @@ function Contact() {
       lang,
       website: els.namedItem('website').value,
     }
+    let path = '/contact'
     if (mode === 'schedule') {
-      // Until live booking ships (specs/001-backend Story 2), staff confirm this slot by hand.
-      body.preferred_slot = `${toISODate(selectedDate)} ${selectedTime}`
+      path = '/bookings'
+      body.slot_start = slotsByDate[toISODate(selectedDate)].find((s) => s.time === selectedTime).iso
       body.video_tool = videoTool || undefined
     }
     setSending(true)
     setFormError('')
     try {
-      await post('/contact', body)
+      await post(path, body)
       setSubmitted(true)
     } catch (err) {
-      setFormError(errorMessage(err, t.formErrors))
+      if (err.error === 'slot_unavailable') {
+        setFormError(a.slotTaken)
+        setSelectedTime(null)
+        loadSlots()
+      } else if (err.error === 'calendar_unavailable') {
+        setCalendarDown(true)
+      } else {
+        setFormError(errorMessage(err, t.formErrors))
+      }
     } finally {
       setSending(false)
     }
@@ -688,12 +705,22 @@ function Contact() {
               {stageHint && <p className="field-hint">{stageHint}</p>}
             </div>
 
-            {mode === 'schedule' && (
+            {mode === 'schedule' && calendarDown && (
+              <div className="field-error-panel" role="alert">
+                <p>{a.unavailable}</p>
+                <button type="button" className="btn btn-outline" onClick={() => setMode('message')}>
+                  {a.sendAsMessage}
+                </button>
+              </div>
+            )}
+
+            {mode === 'schedule' && !calendarDown && (
               <div className="form-row">
                 <label>{a.selectDate}</label>
                 <AppointmentPicker
                   a={a}
                   lang={lang}
+                  slotsByDate={slotsByDate}
                   selectedDate={selectedDate}
                   selectedTime={selectedTime}
                   onSelectDate={(d) => { setSelectedDate(d); setSelectedTime(null) }}

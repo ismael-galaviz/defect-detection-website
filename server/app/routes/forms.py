@@ -51,9 +51,6 @@ class ContactIn(_Form):
     country: str | None = Field(None, max_length=100)
     stage: str | None = Field(None, max_length=200)
     message: str | None = Field(None, max_length=5000)
-    # Until live booking (Story 2) ships, a meeting request is a contact message with these.
-    preferred_slot: str | None = Field(None, pattern=r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$")
-    video_tool: str | None = Field(None, max_length=100)
 
 
 class CalculatorIn(_Form):
@@ -93,7 +90,7 @@ def _messages(row: ContactRequest) -> list[tuple[str, str, str, str | None]]:
                                                  p["results"])
     else:
         staff_mail = emails.staff_contact(p)
-        visitor_mail = emails.visitor_contact(row.lang, meeting=bool(p.get("preferred_slot")))
+        visitor_mail = emails.visitor_contact(row.lang)
     return [(staff, *staff_mail, row.email), (row.email, *visitor_mail, None)]
 
 

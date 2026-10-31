@@ -44,13 +44,6 @@ def test_email_is_trimmed_and_lowercased(client, google):
     assert rows()[0].email == "ana@example.com"
 
 
-def test_meeting_preference_reaches_staff(client, google):
-    body = {**CONTACT, "preferred_slot": "2026-11-03 10:00", "video_tool": "Zoom"}
-    assert client.post("/api/contact", json=body).status_code == 202
-    staff = google.sent[0]
-    assert "2026-11-03 10:00" in staff["text"] and "Zoom" in staff["text"]
-
-
 def test_field_errors(client, google):
     r = client.post("/api/contact", json={**CONTACT, "email": "nope", "name": ""})
     assert r.status_code == 422

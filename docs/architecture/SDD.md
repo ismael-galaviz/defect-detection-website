@@ -1370,10 +1370,13 @@ casually reverse them without the user re-confirming — re-litigating them wast
 
 - **Contact form and calculator "send me these results" are real (spec `specs/001-backend`, Story 1).**
   `Contact()` posts to `/api/contact` and `CalculatorPage` to `/api/calculator-results` (`src/api.js`);
-  the backend (`server/`) stores each request and emails staff and the visitor. Schedule mode sends
-  the chosen slot as `preferred_slot` and staff confirm it by hand — **live availability and
-  double-booking prevention are still missing** until Story 2 (`/api/availability`, `/api/bookings`).
-  Both forms carry an off-screen honeypot field (`.hp-field`).
+  the backend (`server/`) stores each request and emails staff and the visitor. Both forms carry an
+  off-screen honeypot field (`.hp-field`).
+- **Meeting booking is live (Story 2).** Schedule mode loads `/api/availability` (VeritX Google
+  Calendar free/busy minus existing bookings, same CDMX grid, 24 h–60 days ahead) and books with
+  `/api/bookings`, which creates a Meet event and invites the visitor; a slot taken in the
+  meantime shows `slotTaken` and refreshes. If the calendar is down the form offers to send a
+  normal message instead. This supersedes the "fixed illustrative slot list" in §10.17.
 - **Footer "Company" column** now has exactly two real links: "About"/"Nosotros" (`href="#/about"`,
   wired to the real About page) and "Contact"/"Contacto" (`href="#contact"`). "Careers"/"Vacantes" was
   removed entirely (was a non-functional placeholder with no page behind it) — do not re-add a Careers

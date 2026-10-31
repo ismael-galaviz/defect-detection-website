@@ -108,6 +108,7 @@ it with the attachment; staff change its status; the user sees the new status in
 
 - Visitor's browser is in another time zone: slots are always shown and booked in Mexico City time, as today.
 - Slot in the past or less than 24 hours ahead: not offered.
+- Visitor prefers Zoom/Teams/WhatsApp (existing form field): the event still gets the default video-call link; the preference is recorded for staff, who may send another link.
 - Daily sending limit of the Gmail account is reached: submissions are still stored; staff can list unsent notifications and re-send them; the event is logged.
 - The Google authorization expires or is revoked: email and booking fail visibly in staff logs, public forms still store requests, and the picker falls back as in Story 2 scenario 4.
 - Invite sent to an email that already has an account: the existing account is not changed; staff are told.

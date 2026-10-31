@@ -10,6 +10,7 @@ lives in GitHub issues.
 | [`process/STACK-DECISION.md`](process/STACK-DECISION.md) | Stack questionnaire and the stack chosen |
 | [`decisions/`](decisions/000-template.md) | Architecture decision records (`NNN-title.md`) |
 | [`decisions/001-stack.md`](decisions/001-stack.md) | Stack, deploy target and test-first level |
+| [`decisions/002-backend-stack.md`](decisions/002-backend-stack.md) | Backend runtime, DB, auth, Google, admin CLI (proposed) |
 | [`architecture/SDD.md`](architecture/SDD.md) | Full technical/design record of the site and portal |
 | [`architecture/*.drawio`](architecture/) | Architecture/container diagrams (draw.io) |
 | `deployment/` | Environments and every environment variable (none today) |

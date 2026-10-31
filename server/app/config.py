@@ -16,6 +16,15 @@ def _required(name: str) -> str:
     return value
 
 
+def normalize_database_url(url: str) -> str:
+    """Accept the plain `postgresql://` / `postgres://` URLs Railway provides; SQLAlchemy needs
+    the driver named (`postgresql+psycopg://`) to use psycopg 3."""
+    for prefix in ("postgresql://", "postgres://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
+    return url
+
+
 @dataclass(frozen=True)
 class Settings:
     database_url: str
@@ -34,7 +43,7 @@ def get_settings() -> Settings:
     fake = os.environ.get("GOOGLE_FAKE", "") == "1"
     google = (lambda n: os.environ.get(n, "")) if fake else _required
     return Settings(
-        database_url=_required("DATABASE_URL"),
+        database_url=normalize_database_url(_required("DATABASE_URL")),
         staff_email=_required("STAFF_EMAIL"),
         public_site_origins=tuple(
             o.strip() for o in _required("PUBLIC_SITE_ORIGINS").split(",") if o.strip()

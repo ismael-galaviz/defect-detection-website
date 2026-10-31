@@ -20,7 +20,7 @@ until the Railway service exists — replace it with the service's public domain
 
 | Variable | Required | Set by | Meaning |
 |---|---|---|---|
-| `DATABASE_URL` | yes | Railway (reference the Postgres service; use the `postgresql+psycopg://` scheme) | Database connection |
+| `DATABASE_URL` | yes | Railway: reference the Postgres service's `DATABASE_URL` as-is (`postgresql://…` is accepted) | Database connection |
 | `STAFF_EMAIL` | yes | owner | Inbox that receives requests; also the Gmail sender address |
 | `PUBLIC_SITE_ORIGINS` | yes | owner | Comma-separated origins allowed to send POST requests; `*` wildcards allowed, e.g. `https://defect-detection.vercel.app,https://defect-detection-*-ismael-galavizs-projects.vercel.app` (previews) |
 | `SITE_URL` | yes | owner | Public site URL used in links inside emails |

@@ -62,8 +62,12 @@ Every document lives in a `docs/` subfolder; every new one gets a row in `docs/R
   change must update all three.
 - Every page route is a `#/...` hash fragment; don't add path-based routes. The only server path is
   `/api/*`, rewritten by `vercel.json` to Railway (and proxied by Vite in dev) so the API is same-origin.
-- Anything "sent" (contact form, appointments, calculator results, portal emails) is simulated
-  client-side. Never describe it as real.
+- The contact form and calculator results really email (backend Story 1). Appointment
+  availability and the whole customer portal are still simulated client-side until Stories 2–4
+  ship — never describe those as real.
+- Emails to visitor-supplied addresses must never echo text the visitor typed (name, company,
+  message); only fixed copy and numbers. Otherwise the forms become a spam relay
+  (`server/app/emails.py`, test `server/tests/test_emails.py`).
 - Don't fabricate URLs (LinkedIn, Vercel, etc.); ask the owner.
 
 ## Git & PRs

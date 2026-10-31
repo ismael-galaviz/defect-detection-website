@@ -1368,14 +1368,12 @@ casually reverse them without the user re-confirming — re-litigating them wast
 > This is a point-in-time snapshot. **GitHub issues are the live list** — check them for the current
 > state, and update this section when you close an item out (see §13).
 
-- **The contact form does not submit anywhere — including appointment requests.** `Contact()`'s
-  `handleSubmit` just calls `e.preventDefault()` and flips local `submitted` state to show a static
-  success message (`t.contact.success` or, in schedule mode, `t.contact.successSchedule`). There is no
-  backend, no email service (e.g. Formspree), no API call, and **no real calendar/availability system**
-  behind the appointment picker — its time slots are a fixed illustrative list (§10.17), not checked
-  against anyone's actual schedule, so double-booking isn't prevented. If the user asks "why didn't I
-  get an email" or "why did it let two people pick the same slot", this is why — it's
-  cosmetic/prototype-only, flagged previously, not yet wired up.
+- **Contact form and calculator "send me these results" are real (spec `specs/001-backend`, Story 1).**
+  `Contact()` posts to `/api/contact` and `CalculatorPage` to `/api/calculator-results` (`src/api.js`);
+  the backend (`server/`) stores each request and emails staff and the visitor. Schedule mode sends
+  the chosen slot as `preferred_slot` and staff confirm it by hand — **live availability and
+  double-booking prevention are still missing** until Story 2 (`/api/availability`, `/api/bookings`).
+  Both forms carry an off-screen honeypot field (`.hp-field`).
 - **Footer "Company" column** now has exactly two real links: "About"/"Nosotros" (`href="#/about"`,
   wired to the real About page) and "Contact"/"Contacto" (`href="#contact"`). "Careers"/"Vacantes" was
   removed entirely (was a non-functional placeholder with no page behind it) — do not re-add a Careers

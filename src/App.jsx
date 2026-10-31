@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { LanguageProvider, useLanguage, localeFor } from './i18n.jsx'
 import { Icon } from './icons.jsx'
+import { errorMessage, post } from './api.js'
 import { useAuthSession, logout } from './auth.js'
 import DemoPage from './DemoPage.jsx'
 import CalculatorPage from './CalculatorPage.jsx'
@@ -426,6 +427,9 @@ function isPastDay(d, today) {
   const tt = new Date(today.getFullYear(), today.getMonth(), today.getDate())
   return dd < tt
 }
+function toISODate(d) {
+  return [d.getFullYear(), d.getMonth() + 1, d.getDate()].map((n) => String(n).padStart(2, '0')).join('-')
+}
 function formatSlotTime(hhmm, lang) {
   const [h, m] = hhmm.split(':').map(Number)
   const d = new Date(2000, 0, 1, h, m)
@@ -541,6 +545,8 @@ function Contact() {
   const [selectedTime, setSelectedTime] = useState(null)
   const [videoTool, setVideoTool] = useState('')
   const [attemptedSubmit, setAttemptedSubmit] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [formError, setFormError] = useState('')
   const successRef = useRef(null)
   const f = t.contact.form
   const a = t.contact.appointment
@@ -550,13 +556,39 @@ function Contact() {
     if (submitted) successRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [submitted])
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     if (mode === 'schedule' && (!selectedDate || !selectedTime)) {
       setAttemptedSubmit(true)
       return
     }
-    setSubmitted(true)
+    const els = e.currentTarget.elements
+    const val = (id) => els.namedItem(id)?.value.trim() || undefined
+    const body = {
+      name: val('name'),
+      company: val('company'),
+      email: val('email'),
+      country: val('country'),
+      stage: stage || undefined,
+      message: val('message'),
+      lang,
+      website: els.namedItem('website').value,
+    }
+    if (mode === 'schedule') {
+      // Until live booking ships (specs/001-backend Story 2), staff confirm this slot by hand.
+      body.preferred_slot = `${toISODate(selectedDate)} ${selectedTime}`
+      body.video_tool = videoTool || undefined
+    }
+    setSending(true)
+    setFormError('')
+    try {
+      await post('/contact', body)
+      setSubmitted(true)
+    } catch (err) {
+      setFormError(errorMessage(err, t.formErrors))
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -708,8 +740,16 @@ function Contact() {
               <span>{t.contact.privacy.consentLabel}</span>
             </label>
 
-            <button type="submit" className="btn btn-dark" style={{ width: '100%' }}>
-              {f.submit}
+            {/* Honeypot: hidden from people and assistive tech; bots that fill it are ignored. */}
+            <div className="hp-field" aria-hidden="true">
+              <label htmlFor="website">Website</label>
+              <input id="website" type="text" tabIndex={-1} autoComplete="off" defaultValue="" />
+            </div>
+
+            {formError && <p className="field-error" role="alert">{formError}</p>}
+
+            <button type="submit" className="btn btn-dark" style={{ width: '100%' }} disabled={sending}>
+              {sending ? t.formErrors.sending : f.submit}
             </button>
           </form>
         )}

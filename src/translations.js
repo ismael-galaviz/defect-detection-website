@@ -376,6 +376,12 @@ export const translations = {
         },
       ],
     },
+    formErrors: {
+      sending: "Sending…",
+      network: "We couldn't send your request. Please try again in a moment, or message us on WhatsApp.",
+      rateLimited: "Too many requests from your connection. Please try again in a few minutes.",
+      invalid: "Please check your details (for example, the email address) and try again.",
+    },
     contact: {
       eyebrow: 'Get In Touch',
       title: 'Ready to see VeritX Vision on your line?',
@@ -1024,6 +1030,12 @@ export const translations = {
           body: 'Si tienes preguntas sobre este aviso de privacidad o sobre cómo manejamos tus datos, escríbenos a hello@veritxvision.com.',
         },
       ],
+    },
+    formErrors: {
+      sending: "Enviando…",
+      network: "No pudimos enviar tu solicitud. Intenta de nuevo en un momento o escríbenos por WhatsApp.",
+      rateLimited: "Demasiadas solicitudes desde tu conexión. Intenta de nuevo en unos minutos.",
+      invalid: "Revisa tus datos (por ejemplo, el correo) e intenta de nuevo.",
     },
     contact: {
       eyebrow: 'Contáctanos',
@@ -1674,6 +1686,12 @@ export const translations = {
           body: "Pour toute question sur cet avis de confidentialité ou sur la façon dont nous traitons vos données, écrivez-nous à hello@veritxvision.com.",
         },
       ],
+    },
+    formErrors: {
+      sending: "Envoi…",
+      network: "Nous n'avons pas pu envoyer votre demande. Réessayez dans un instant ou écrivez-nous sur WhatsApp.",
+      rateLimited: "Trop de demandes depuis votre connexion. Réessayez dans quelques minutes.",
+      invalid: "Vérifiez vos informations (par exemple, l'adresse e-mail) et réessayez.",
     },
     contact: {
       eyebrow: 'Contactez-nous',

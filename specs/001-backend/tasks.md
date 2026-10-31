@@ -60,9 +60,9 @@ Phases 1–2 ship inside PR 1 together with US1.
 - [X] T019 [P] [US1] Implement `server/app/emails.py`: templates for staff contact/calculator/booking notifications and visitor confirmation/calculator results in es/en/fr; currency formatting per lang (R10)
 - [X] T020 [US1] Implement `server/app/routes/forms.py`: `POST /api/contact`, `POST /api/calculator-results` (Pydantic models per contracts/api.md, honeypot, IP rate limit from `contact_requests`, commit then send in background task updating `notification_status`)
 - [X] T021 [US1] Add `list pending` and `resend-pending` commands in `server/app/cli.py`
-- [ ] T022 [P] [US1] Create `src/api.js`: `post(path, body)` / `get(path)` with JSON, credentials `same-origin`, throws `{status, error, fields}`; network failure → `{error: 'network'}`
-- [ ] T023 [US1] Wire `Contact()` message mode in `src/App.jsx` to `POST /api/contact` (controlled field values, hidden `website` input, loading state, field errors, network/429 error message per FR-031) and add copy in all three languages in `src/translations.js`
-- [ ] T024 [US1] Wire `handleSendResults` in `src/CalculatorPage.jsx` to `POST /api/calculator-results` with inputs, computed `CALC` results, currency and lang; errors as in T023
+- [X] T022 [P] [US1] Create `src/api.js`: `post(path, body)` / `get(path)` with JSON, credentials `same-origin`, throws `{status, error, fields}`; network failure → `{error: 'network'}`
+- [X] T023 [US1] Wire `Contact()` message mode in `src/App.jsx` to `POST /api/contact` (controlled field values, hidden `website` input, loading state, field errors, network/429 error message per FR-031) and add copy in all three languages in `src/translations.js`
+- [X] T024 [US1] Wire `handleSendResults` in `src/CalculatorPage.jsx` to `POST /api/calculator-results` with inputs, computed `CALC` results, currency and lang; errors as in T023
 
 **Checkpoint**: Story 1 works end-to-end with `GOOGLE_FAKE=1`; on the preview with real Google (quickstart 1). → **PR 1** (`Closes #2`).
 
@@ -136,8 +136,8 @@ Phases 1–2 ship inside PR 1 together with US1.
 ## Phase 7: Polish & cross-cutting (in the PR where each becomes true)
 
 - [ ] T051 [P] Update `docs/architecture/SDD.md` §2 (stack), §4 (routes), §11 (closed gaps), §14 (portal is real; replace §14.8 table)
-- [ ] T052 [P] Add `GOTCHA.md` entries: Google OAuth "Testing" status expires refresh tokens after 7 days; Vercel previews call the production API
-- [ ] T053 [P] Add `CLAUDE.md` trap: emails to visitor-supplied addresses never echo free text (R10)
+- [X] T052 [P] Add `GOTCHA.md` entries: Google OAuth "Testing" status expires refresh tokens after 7 days; Vercel previews call the production API
+- [X] T053 [P] Add `CLAUDE.md` trap: emails to visitor-supplied addresses never echo free text (R10)
 - [ ] T054 Run `quickstart.md` end-to-end on the Vercel preview and record results in each PR's test plan
 - [ ] T055 Run `/ponytail-review` and `/security-review` on each PR diff before marking it ready
 

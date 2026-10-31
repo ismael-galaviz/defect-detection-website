@@ -18,3 +18,23 @@ Format (every field required, dates as `YYYY-MM-DD`):
 
 What happens, how to recognize it, what to do meanwhile.
 ```
+
+## Google OAuth refresh token expires after 7 days in "Testing"
+- Added: 2026-10-31
+- Review by: 2027-01-31
+- Remove when: VeritX moves email to its own domain/email service and booking no longer uses the personal Google account
+
+If the OAuth consent screen of the VeritX Google Cloud project is left in "Testing", Google
+revokes the refresh token after 7 days: emails stop (requests show `failed` in
+`python -m app.cli list pending`) and booking reports the calendar as unavailable. Publish the
+consent screen ("In production"), re-run `python -m app.cli google-auth`, update
+`GOOGLE_REFRESH_TOKEN` in Railway, then `python -m app.cli resend-pending`.
+
+## Vercel previews call the production backend
+- Added: 2026-10-31
+- Review by: 2027-01-31
+- Remove when: a staging Railway environment exists and previews point to it
+
+`vercel.json` rewrite destinations can't use env vars, so every preview deployment sends
+`/api/*` to the production Railway service. Testing a form on a preview sends real emails and
+stores real rows. Use local dev (`GOOGLE_FAKE=1`) for experiments.

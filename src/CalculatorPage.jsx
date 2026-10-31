@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useLanguage, localeFor } from './i18n.jsx'
 import { Icon } from './icons.jsx'
+import { errorMessage, post } from './api.js'
 
 // Defaults mirror the worked examples from the source ROI guide (Guia_Ingeniero_Calidad_ROI.docx),
 // except lineSpeed — see the note on CALC.lineSpeed below for why that one was redesigned.
@@ -110,6 +111,8 @@ export default function CalculatorPage() {
   const [sendName, setSendName] = useState('')
   const [sendEmail, setSendEmail] = useState('')
   const [sent, setSent] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState('')
 
   function handleFieldChange(sectionId, key, val) {
     setValues((v) => ({ ...v, [sectionId]: { ...v[sectionId], [key]: val } }))
@@ -128,9 +131,29 @@ export default function CalculatorPage() {
 
   const totalAnnual = Object.values(results).reduce((a, b) => a + b, 0)
 
-  function handleSendResults(e) {
+  async function handleSendResults(e) {
     e.preventDefault()
-    setSent(true)
+    const inputs = Object.fromEntries(Object.entries(values).map(([id, fields]) => [
+      id, Object.fromEntries(Object.entries(fields).map(([k, n]) => [k, Number(n) || 0])),
+    ]))
+    setSending(true)
+    setSendError('')
+    try {
+      await post('/calculator-results', {
+        name: sendName.trim() || undefined,
+        email: sendEmail.trim(),
+        lang,
+        currency,
+        inputs,
+        results: { ...results, total: totalAnnual },
+        website: e.currentTarget.elements.namedItem('calc-website').value,
+      })
+      setSent(true)
+    } catch (err) {
+      setSendError(errorMessage(err, t.formErrors))
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -191,6 +214,7 @@ export default function CalculatorPage() {
             {sent ? (
               <p className="field-hint">{c.sendResults.success}</p>
             ) : (
+              <>
               <form className="calc-send-form" onSubmit={handleSendResults}>
                 <input
                   type="text"
@@ -208,8 +232,16 @@ export default function CalculatorPage() {
                   aria-label={c.sendResults.email}
                   required
                 />
-                <button type="submit" className="btn btn-outline">{c.sendResults.submit}</button>
+                <div className="hp-field" aria-hidden="true">
+                  <label htmlFor="calc-website">Website</label>
+                  <input id="calc-website" type="text" tabIndex={-1} autoComplete="off" defaultValue="" />
+                </div>
+                <button type="submit" className="btn btn-outline" disabled={sending}>
+                  {sending ? t.formErrors.sending : c.sendResults.submit}
+                </button>
               </form>
+              {sendError && <p className="field-error" role="alert">{sendError}</p>}
+              </>
             )}
           </div>
 

@@ -1592,3 +1592,13 @@ form.auth-card { margin: 0; }
   .vh-grid { grid-template-columns: 1fr; }
   .vh-grid-actions { grid-template-columns: 1fr; }
 }
+
+/* Honeypot field for spam bots (contact + calculator forms): off-screen, not display:none,
+   so naive bots still fill it. */
+.hp-field {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}

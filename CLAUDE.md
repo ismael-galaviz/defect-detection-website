@@ -11,12 +11,17 @@ its format; delete entries whose *Remove when* holds. A `SessionStart` hook flag
 
 ## Project
 - VeritX Vision marketing site + client-only simulated customer portal. Stack: React 18 + Vite 5,
-  plain CSS, Vitest, Vercel (`docs/decisions/001-stack.md`). No backend yet; when built it will be
-  hosted on Railway (runtime/DB decided in its spec, issue #8).
+  plain CSS, Vitest, Vercel (`docs/decisions/001-stack.md`). Backend (in progress, spec
+  `specs/001-backend`): FastAPI + Postgres in `server/`, on Railway (`docs/decisions/002-backend-stack.md`,
+  `docs/deployment/environments.md`).
 - Read `docs/architecture/SDD.md` before changing content or behavior — §10 holds established
   decisions, §11 known gaps, §14 the portal.
-- Commands: install `npm install` · dev `npm run dev` · test `npm test` · build `npm run build` ·
-  lint: none.
+- Frontend commands (repo root): install `npm install` · dev `npm run dev` · test `npm test` ·
+  build `npm run build` · lint: none.
+- Backend commands (`server/`): install `python -m venv .venv && . .venv/bin/activate && pip install
+  -e '.[dev]'` · dev `uvicorn app.main:app --reload` (with `server/.env` from `.env.example`,
+  `GOOGLE_FAKE=1`) · test `pytest` (needs Postgres, `TEST_DATABASE_URL`) · lint `ruff check .` ·
+  migrations `alembic upgrade head` · staff CLI `python -m app.cli --help`.
 - Pending work lives in GitHub issues. Reference them in PRs (`Closes #N`).
 
 ## Workflow (Spec-Driven)
@@ -55,7 +60,8 @@ Every document lives in a `docs/` subfolder; every new one gets a row in `docs/R
 ## Traps worth knowing
 - All user-facing copy lives in `src/translations.js` in **three** languages (es/en/fr). A copy
   change must update all three.
-- Every route is a `#/...` hash fragment; don't add path-based routes (Vercel has no rewrites).
+- Every page route is a `#/...` hash fragment; don't add path-based routes. The only server path is
+  `/api/*`, rewritten by `vercel.json` to Railway (and proxied by Vite in dev) so the API is same-origin.
 - Anything "sent" (contact form, appointments, calculator results, portal emails) is simulated
   client-side. Never describe it as real.
 - Don't fabricate URLs (LinkedIn, Vercel, etc.); ask the owner.

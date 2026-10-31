@@ -12,3 +12,11 @@ dist
 # Claude Code local files
 .claude/settings.local.json
 CLAUDE.local.md
+
+# Python (server/)
+server/.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/

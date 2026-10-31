@@ -21,26 +21,26 @@ Phases 1–2 ship inside PR 1 together with US1.
 
 ## Phase 1: Setup
 
-- [ ] T001 Create `server/pyproject.toml` (Python 3.12; deps from plan Technical Context; dev: pytest, ruff; ruff + pytest config) and `server/app/__init__.py`
-- [ ] T002 [P] Create `server/.env.example` listing `DATABASE_URL`, `STAFF_EMAIL`, `PUBLIC_SITE_ORIGINS`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `GOOGLE_CALENDAR_ID`, `GOOGLE_FAKE`, `SITE_URL` (no values) and add `server/.venv/`, `__pycache__/` to `.gitignore`
-- [ ] T003 [P] Add `server` job to `.github/workflows/ci.yml`: Postgres 16 service, Python 3.12, `pip install -e 'server[dev]'`, `ruff check server`, `pytest server`
-- [ ] T004 [P] Add dev proxy `server.proxy: { '/api': 'http://localhost:8000' }` in `vite.config.js`
-- [ ] T005 [P] Create `vercel.json` with rewrite `/api/:path*` → `<RAILWAY_URL>/api/:path*` (placeholder until the owner provides the URL; leave a `shortcut:` note in the PR, not in JSON)
-- [ ] T006 [P] Write `docs/deployment/environments.md` (Railway service root `server`, pre-deploy `alembic upgrade head`, start `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, every env var and who sets it, Google OAuth setup incl. "In production" consent screen) and add its row to `docs/README.md`
+- [X] T001 Create `server/pyproject.toml` (Python 3.12; deps from plan Technical Context; dev: pytest, ruff; ruff + pytest config) and `server/app/__init__.py`
+- [X] T002 [P] Create `server/.env.example` listing `DATABASE_URL`, `STAFF_EMAIL`, `PUBLIC_SITE_ORIGINS`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `GOOGLE_CALENDAR_ID`, `GOOGLE_FAKE`, `SITE_URL` (no values) and add `server/.venv/`, `__pycache__/` to `.gitignore`
+- [X] T003 [P] Add `server` job to `.github/workflows/ci.yml`: Postgres 16 service, Python 3.12, `pip install -e 'server[dev]'`, `ruff check server`, `pytest server`
+- [X] T004 [P] Add dev proxy `server.proxy: { '/api': 'http://localhost:8000' }` in `vite.config.js`
+- [X] T005 [P] Create `vercel.json` with rewrite `/api/:path*` → `<RAILWAY_URL>/api/:path*` (placeholder until the owner provides the URL; leave a `shortcut:` note in the PR, not in JSON)
+- [X] T006 [P] Write `docs/deployment/environments.md` (Railway service root `server`, pre-deploy `alembic upgrade head`, start `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, every env var and who sets it, Google OAuth setup incl. "In production" consent screen) and add its row to `docs/README.md`
 
 ---
 
 ## Phase 2: Foundational (blocks all stories)
 
-- [ ] T007 Implement `server/app/config.py` (read env vars into a settings object; fail fast on missing required ones)
-- [ ] T008 Implement `server/app/db.py` (SQLAlchemy engine/session from `DATABASE_URL`, request-scoped session dependency)
-- [ ] T009 Create Alembic setup `server/alembic.ini`, `server/migrations/env.py`
-- [ ] T010 Write `server/tests/conftest.py`: test database (create/drop schema per session, transaction rollback per test), FastAPI `TestClient`, fake Google client fixture, fixed `Origin` header
-- [ ] T011 [P] Write tests for the Google client in `server/tests/test_google.py` (token refresh request shape, Gmail raw MIME base64url incl. attachments, freeBusy and events.insert payloads with conferenceData; using httpx MockTransport)
-- [ ] T012 Implement `server/app/google.py`: OAuth refresh, `send_email(to, subject, text, reply_to=None, attachments=())`, `busy_intervals(start, end)`, `create_event(start, end, summary, description, attendee)`; `FakeGoogle` when `GOOGLE_FAKE=1` logs instead of calling
-- [ ] T013 Implement `server/app/main.py`: FastAPI app under `/api`, `GET /api/health`, JSON logging (R13), Origin check for non-GET requests (403 `bad_origin`), error format from `contracts/api.md`, client-IP helper from `X-Forwarded-For`
-- [ ] T014 Implement `server/app/cli.py` skeleton with argparse subcommands and `google-auth` (local consent flow printing the refresh token) per `contracts/cli.md`
-- [ ] T015 Update `CLAUDE.md`: reference `docs/decisions/002-backend-stack.md` in Project, add commands (`server/`: `pip install -e '.[dev]'`, `uvicorn app.main:app --reload`, `pytest`, `ruff check .`) and replace the "no rewrites" trap with the `/api` rewrite rule
+- [X] T007 Implement `server/app/config.py` (read env vars into a settings object; fail fast on missing required ones)
+- [X] T008 Implement `server/app/db.py` (SQLAlchemy engine/session from `DATABASE_URL`, request-scoped session dependency)
+- [X] T009 Create Alembic setup `server/alembic.ini`, `server/migrations/env.py`
+- [X] T010 Write `server/tests/conftest.py`: test database (create/drop schema per session, transaction rollback per test), FastAPI `TestClient`, fake Google client fixture, fixed `Origin` header
+- [X] T011 [P] Write tests for the Google client in `server/tests/test_google.py` (token refresh request shape, Gmail raw MIME base64url incl. attachments, freeBusy and events.insert payloads with conferenceData; using httpx MockTransport)
+- [X] T012 Implement `server/app/google.py`: OAuth refresh, `send_email(to, subject, text, reply_to=None, attachments=())`, `busy_intervals(start, end)`, `create_event(start, end, summary, description, attendee)`; `FakeGoogle` when `GOOGLE_FAKE=1` logs instead of calling
+- [X] T013 Implement `server/app/main.py`: FastAPI app under `/api`, `GET /api/health`, JSON logging (R13), Origin check for non-GET requests (403 `bad_origin`), error format from `contracts/api.md`, client-IP helper from `X-Forwarded-For`
+- [X] T014 Implement `server/app/cli.py` skeleton with argparse subcommands and `google-auth` (local consent flow printing the refresh token) per `contracts/cli.md`
+- [X] T015 Update `CLAUDE.md`: reference `docs/decisions/002-backend-stack.md` in Project, add commands (`server/`: `pip install -e '.[dev]'`, `uvicorn app.main:app --reload`, `pytest`, `ruff check .`) and replace the "no rewrites" trap with the `/api` rewrite rule
 
 **Checkpoint**: `pytest server` and `GET /api/health` pass locally and in CI.
 

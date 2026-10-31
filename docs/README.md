@@ -13,7 +13,7 @@ lives in GitHub issues.
 | [`decisions/002-backend-stack.md`](decisions/002-backend-stack.md) | Backend runtime, DB, auth, Google, admin CLI |
 | [`architecture/SDD.md`](architecture/SDD.md) | Full technical/design record of the site and portal |
 | [`architecture/*.drawio`](architecture/) | Architecture/container diagrams (draw.io) |
-| `deployment/` | Environments and every environment variable (none today) |
+| [`deployment/environments.md`](deployment/environments.md) | Hosts, Railway settings, every environment variable, Google OAuth setup |
 | `runbooks/` | Operational procedures |
 | `audits/` | Audit reports, one folder per `YYYY-MM-DD` |
 

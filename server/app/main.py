@@ -83,8 +83,8 @@ def create_app() -> FastAPI:
     def health():
         return {"ok": True}
 
-    from app.routes import auth, booking, forms
-    for module in (forms, booking, auth):
+    from app.routes import auth, booking, forms, tickets
+    for module in (forms, booking, auth, tickets):
         api.include_router(module.router)
     app.include_router(api)
     return app

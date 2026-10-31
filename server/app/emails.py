@@ -248,3 +248,19 @@ def invite(lang: str, name: str, company: str, link: str) -> tuple[str, str]:
 def reset(lang: str, link: str) -> tuple[str, str]:
     subject, body = RESET[lang]
     return subject, f"{body.format(link=link)}\n\n{SIGNATURE[lang]}\n"
+
+
+_PRIORITY_ES = {"low": "baja", "medium": "media", "high": "alta"}
+
+
+def staff_ticket(ticket_id: int, company: str, user_name: str, user_email: str, priority: str,
+                 subject: str, description: str, filenames: list[str]) -> tuple[str, str]:
+    mail_subject = f"[Portal] Ticket #{ticket_id} ({_PRIORITY_ES[priority]}): {subject}"
+    lines = [f"Nuevo ticket de soporte #{ticket_id}.", "", f"Empresa: {company}",
+             f"Usuario: {user_name} <{user_email}>", f"Prioridad: {_PRIORITY_ES[priority]}",
+             f"Asunto: {subject}", "", description, ""]
+    if filenames:
+        lines += ["Adjuntos: " + ", ".join(filenames), ""]
+    lines += ["Responde a este correo para contestarle directamente. Cambia el estado con:",
+              f"python -m app.cli ticket-status --id {ticket_id} --status resolved"]
+    return mail_subject, "\n".join(lines) + "\n"

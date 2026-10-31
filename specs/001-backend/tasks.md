@@ -119,14 +119,14 @@ Phases 1–2 ship inside PR 1 together with US1.
 **Independent test**: quickstart.md step 4. **Depends on US3.**
 
 ### Tests (write first)
-- [ ] T044 [P] [US4] Tests in `server/tests/test_uploads.py`: magic-byte detection for PNG/JPEG/PDF; renamed `.exe` → 415; 2 MB + 1 byte → 413; filename sanitized
-- [ ] T045 [P] [US4] Tests in `server/tests/test_tickets.py`: create ticket with 0–3 own unlinked attachments → 201 + staff email with files and user reply-to; 4 ids, foreign or already-linked id → 422; other company's ticket/attachment → 404; `ticket-status` CLI changes status shown in `/api/me`
+- [X] T044 [P] [US4] Tests in `server/tests/test_uploads.py`: magic-byte detection for PNG/JPEG/PDF; renamed `.exe` → 415; 2 MB + 1 byte → 413; filename sanitized
+- [X] T045 [P] [US4] Tests in `server/tests/test_tickets.py`: create ticket with 0–3 own unlinked attachments → 201 + staff email with files and user reply-to; 4 ids, foreign or already-linked id → 422; other company's ticket/attachment → 404; `ticket-status` CLI changes status shown in `/api/me`
 
 ### Implementation
-- [ ] T046 [US4] Add `Ticket` and `Attachment` models in `server/app/models.py` and migration `server/migrations/versions/0004_tickets.py`
-- [ ] T047 [US4] Implement `server/app/uploads.py` (size limit, magic-byte sniffing, filename sanitizing)
-- [ ] T048 [US4] Implement `server/app/routes/tickets.py`: `POST /api/attachments`, `GET /api/attachments/{id}`, `POST /api/tickets` (staff email with attachments via `google.send_email`), and add tickets to `GET /api/me`
-- [ ] T049 [US4] Add CLI `ticket-status`, `list tickets`, and unlinked-attachment cleanup to `cleanup` in `server/app/cli.py`
+- [X] T046 [US4] Add `Ticket` and `Attachment` models in `server/app/models.py` and migration `server/migrations/versions/0004_tickets.py`
+- [X] T047 [US4] Implement `server/app/uploads.py` (size limit, magic-byte sniffing, filename sanitizing)
+- [X] T048 [US4] Implement `server/app/routes/tickets.py`: `POST /api/attachments`, `GET /api/attachments/{id}`, `POST /api/tickets` (staff email with attachments via `google.send_email`), and add tickets to `GET /api/me`
+- [X] T049 [US4] Add CLI `ticket-status`, `list tickets`, and unlinked-attachment cleanup to `cleanup` in `server/app/cli.py`
 - [ ] T050 [US4] Update `SupportTicketForm` in `src/VisionHomePage.jsx`: file input (accept png/jpeg/pdf, max 3, client-side size check), upload each file then create ticket, per-file errors; ticket list with status and download links; copy in es/en/fr in `src/translations.js`
 
 **Checkpoint**: quickstart step 4 passes → **PR 4** (`Closes #8`, `Closes #10`).

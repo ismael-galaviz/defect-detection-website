@@ -13,6 +13,8 @@ from sqlalchemy import (
     ForeignKey,
     Identity,
     Index,
+    Integer,
+    LargeBinary,
     Numeric,
     Text,
     func,
@@ -136,3 +138,34 @@ class AuditLog(_Row, Base):
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     email: Mapped[str] = mapped_column(Text, nullable=False)
     ip: Mapped[str | None] = mapped_column(INET)
+
+
+class Ticket(_Row, Base):
+    __tablename__ = "tickets"
+    company_id: Mapped[int] = _fk("companies.id", index=True)
+    user_id: Mapped[int] = _fk("users.id")
+    subject: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    priority: Mapped[str] = mapped_column(
+        Enum("low", "medium", "high", name="ticket_priority"), nullable=False)
+    status: Mapped[str] = mapped_column(
+        Enum("open", "in_progress", "resolved", "closed", name="ticket_status"), nullable=False,
+        server_default="open")
+    notification_status: Mapped[str] = mapped_column(
+        Enum(*NOTIFICATION_STATUSES, name="notification_status"), nullable=False,
+        server_default="pending")
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
+class Attachment(_Row, Base):
+    __tablename__ = "attachments"
+    user_id: Mapped[int] = _fk("users.id", index=True)
+    ticket_id: Mapped[int | None] = mapped_column(
+        ForeignKey("tickets.id", ondelete="CASCADE"), index=True)
+    filename: Mapped[str] = mapped_column(Text, nullable=False)
+    content_type: Mapped[str] = mapped_column(
+        Enum("image/png", "image/jpeg", "application/pdf", name="attachment_type"),
+        nullable=False)
+    size: Mapped[int] = mapped_column(Integer, nullable=False)
+    content: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)

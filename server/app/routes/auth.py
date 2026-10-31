@@ -14,6 +14,7 @@ from app.google import GoogleError, get_google
 from app.http import ApiError, client_ip
 from app.models import Company, Payment, Subscription, User
 from app.routes.forms import Lang, _email
+from app.routes.tickets import company_tickets
 
 log = logging.getLogger(__name__)
 router = APIRouter()
@@ -172,7 +173,7 @@ def portal_data(db: Session, user: User) -> dict:
         "subscriptions": [{"name": s.name, "status": s.status} for s in subs],
         "payments": [{"paid_on": p.paid_on.isoformat(), "amount": f"{p.amount:.2f}",
                       "currency": p.currency} for p in pays],
-        "tickets": [],
+        "tickets": company_tickets(db, cid),
     }
 
 

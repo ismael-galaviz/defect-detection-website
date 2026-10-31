@@ -69,8 +69,27 @@ def _pending():
             ContactRequest.notification_status != "sent").order_by(ContactRequest.id)).all()
 
 
+def _pending_tickets():
+    from app.db import new_session
+    from app.models import Ticket
+
+    with new_session() as db:
+        return db.scalars(select(Ticket).where(Ticket.notification_status != "sent")
+                          .order_by(Ticket.id)).all()
+
+
 def cmd_list(args) -> int:
-    from app.models import Company, User
+    from app.models import Company, Ticket, User
+
+    if args.what == "tickets":
+        with _db() as db:
+            query = select(Ticket, Company).join(Company, Company.id == Ticket.company_id)
+            if args.company:
+                query = query.where(Company.name == args.company)
+            for t, c in db.execute(query.order_by(Ticket.id.desc())):
+                print(f"{t.id}\t{t.created_at:%Y-%m-%d}\t{t.status}\t{t.priority}\t{c.name}"
+                      f"\t{t.subject}")
+        return 0
 
     if args.what in ("companies", "users"):
         with _db() as db:
@@ -89,7 +108,10 @@ def cmd_list(args) -> int:
         for r in rows:
             print(f"{r.id}\t{r.created_at:%Y-%m-%d %H:%M}\t{r.kind}\t{r.email}\t"
                   f"{r.notification_status}")
-        print(f"{len(rows)} pending notification(s)")
+        tickets = _pending_tickets()
+        for t in tickets:
+            print(f"ticket {t.id}\t{t.created_at:%Y-%m-%d %H:%M}\t{t.notification_status}")
+        print(f"{len(rows) + len(tickets)} pending notification(s)")
     return 0
 
 
@@ -98,7 +120,10 @@ def cmd_resend_pending(_args, google=None) -> int:
     from app.routes.forms import send_notifications
 
     google = google or get_google()
+    from app.routes.tickets import send_ticket_notification
+
     results = [send_notifications(r.id, google) for r in _pending()]
+    results += [send_ticket_notification(t.id, google) for t in _pending_tickets()]
     print(f"resent {results.count('sent')}, still failing {results.count('failed')}")
     return 0 if "failed" not in results else 1
 
@@ -234,12 +259,26 @@ def cmd_payment_add(args) -> int:
     return 0
 
 
+def cmd_ticket_status(args) -> int:
+    from app.models import Ticket
+
+    with _db() as db:
+        ticket = db.get(Ticket, args.id)
+        if ticket is None:
+            print(f"No ticket {args.id}", file=sys.stderr)
+            return 1
+        ticket.status = args.status
+        db.commit()
+    print(f"ticket {args.id}: {args.status}")
+    return 0
+
+
 def cmd_cleanup(_args) -> int:
-    from datetime import UTC, datetime
+    from datetime import UTC, datetime, timedelta
 
     from sqlalchemy import delete, or_
 
-    from app.models import Token, UserSession
+    from app.models import Attachment, Token, UserSession
     from app.security import SESSION_IDLE
 
     now = datetime.now(UTC)
@@ -248,8 +287,11 @@ def cmd_cleanup(_args) -> int:
             UserSession.expires_at < now, UserSession.last_seen_at < now - SESSION_IDLE)))
         tokens = db.execute(delete(Token).where(or_(Token.expires_at < now,
                                                     Token.used_at.is_not(None))))
+        files = db.execute(delete(Attachment).where(
+            Attachment.ticket_id.is_(None), Attachment.created_at < now - timedelta(hours=24)))
         db.commit()
-    print(f"deleted {sessions.rowcount} sessions, {tokens.rowcount} tokens")
+    print(f"deleted {sessions.rowcount} sessions, {tokens.rowcount} tokens, "
+          f"{files.rowcount} unused uploads")
     return 0
 
 
@@ -277,7 +319,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("google-auth", help="get GOOGLE_REFRESH_TOKEN").set_defaults(
         func=cmd_google_auth)
     p = sub.add_parser("list", help="print records")
-    p.add_argument("what", choices=["companies", "users", "pending"])
+    p.add_argument("what", choices=["companies", "users", "tickets", "pending"])
     p.add_argument("--company")
     p.set_defaults(func=cmd_list)
 
@@ -316,8 +358,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--currency", type=_currency, required=True)
     p.set_defaults(func=cmd_payment_add)
 
-    sub.add_parser("cleanup", help="delete expired sessions and used/expired links").set_defaults(
-        func=cmd_cleanup)
+    p = sub.add_parser("ticket-status", help="change a support ticket's status")
+    p.add_argument("--id", type=int, required=True)
+    p.add_argument("--status", choices=["open", "in_progress", "resolved", "closed"],
+                   required=True)
+    p.set_defaults(func=cmd_ticket_status)
+
+    sub.add_parser("cleanup", help="delete expired sessions/links and unused uploads > 24 h"
+                   ).set_defaults(func=cmd_cleanup)
     sub.add_parser("resend-pending", help="retry unsent notification emails").set_defaults(
         func=cmd_resend_pending)
     return parser

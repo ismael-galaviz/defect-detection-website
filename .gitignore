@@ -3,3 +3,12 @@ dist
 .DS_Store
 *.log
 *.timestamp-*.mjs
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Claude Code local files
+.claude/settings.local.json
+CLAUDE.local.md

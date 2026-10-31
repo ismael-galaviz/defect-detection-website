@@ -18,16 +18,11 @@ by a company headquartered in Tlaxcala, Mexico, building an AI-powered fabric-de
 verification, password/username recovery, and a "Vision Home" account dashboard — see §14), all
 client-side routed.
 
-- **Live site (GitHub Pages):** https://ismael-galaviz.github.io/defect-detection/
 - **Live site (Vercel):** the repo is also connected to Vercel directly — URL not recorded here yet
   (fill in once known; it'll be a `*.vercel.app` subdomain unless a custom domain is attached).
-- **GitHub repo:** https://github.com/ismael-galaviz/defect-detection (branch `main`)
-- **Git root:** this directory (`02_Website_Code/frontend/veritx-web`) — the repo does **not** include
-  the rest of the `Defect Detection` project tree (images, project code, diagrams, etc. are siblings,
-  outside git).
-- **Hosting:** two independent targets build from the same `main` branch — GitHub Pages (via GitHub
-  Actions, §2) and Vercel (via Vercel's own git integration, §2). See §2's "Vite config" note for how a
-  single `vite.config.js` serves both without per-target manual steps.
+- **GitHub repo:** https://github.com/ismael-galaviz/defect-detection-website (branch `main`)
+- **Hosting:** Vercel only, via Vercel's own git integration (§2). GitHub Pages was dropped
+  (ADR `docs/decisions/001-stack.md`).
 
 ---
 
@@ -39,8 +34,8 @@ client-side routed.
   properties for the palette and plain class selectors. No CSS Modules, no styled-components.
 - Icons: hand-drawn inline SVG paths (no icon library dependency) — see §6.
 - State: local `useState`/`useEffect` only. No Redux/Zustand/Context beyond the language provider.
-- No test suite, no linter config.
-- `package.json` deps: `react`, `react-dom` (runtime); `vite`, `@vitejs/plugin-react` (dev).
+- Tests: Vitest (`npm test`), minimal scope — ROI formulas and `auth.js` only (ADR 001). No linter.
+- `package.json` deps: `react`, `react-dom` (runtime); `vite`, `@vitejs/plugin-react`, `vitest` (dev).
 
 ### Build & dev
 
@@ -49,6 +44,7 @@ npm install        # if node_modules is missing/stale
 npm run dev         # Vite dev server
 npm run build        # production build to dist/
 npm run preview      # preview the production build locally
+npm test             # Vitest, run once
 ```
 
 **Known local-env quirk:** npm's optional-dependency resolution sometimes omits the native Rollup
@@ -65,72 +61,50 @@ deployed app.
 ### Vite config (`vite.config.js`)
 
 ```js
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-
 export default defineConfig({
   plugins: [react()],
-  base: process.env.VERCEL ? '/' : '/defect-detection/',
 })
 ```
 
-**Two deploy targets, one config.** GitHub Pages serves this repo as a *project site* under
-`/defect-detection/`, so every asset URL needs that path prefix baked in at build time. Vercel serves it
-at the domain root (its own subdomain, or a custom domain later), where that same prefix would 404 every
-JS/CSS asset. Vercel automatically sets the `VERCEL` env var during its builds (no manual config needed
-on Vercel's side for this), so `base` branches on it: `'/'` under Vercel, `'/defect-detection/'`
-everywhere else (including local `npm run build`, which is why a plain local build still matches what
-GitHub Pages expects). If the GitHub Pages repo is ever renamed, or Pages moves to a custom domain,
-update the non-Vercel branch of this ternary and re-deploy.
+Vite's default `base` (`'/'`) is correct because the only deploy target, Vercel, serves the site at
+the domain root. (Until 2026-10 a `VERCEL`-conditional `base` also served a GitHub Pages build under
+`/defect-detection/`; Pages was dropped and that branch removed.)
 
-### Deploy — GitHub Pages (`.github/workflows/deploy.yml`)
+### CI (`.github/workflows/ci.yml`)
 
-Triggers on push to `main`/`master` or manual dispatch. Steps: checkout → Node 20 → `npm ci` →
-`npm run build` → upload `./dist` as a Pages artifact → deploy. Uses `actions/upload-pages-artifact@v3`
-and `actions/deploy-pages@v4`. (CI currently warns that Node 20 is deprecated on the runner image and
-is being forced onto Node 24 — cosmetic, not currently broken; bump `node-version` to `24` if it starts
-to matter.)
+Runs on every PR and on push to `main`: secret scan (gitleaks), repo hygiene (no tracked `.env`,
+`docs/README.md` exists, `GOTCHA.md` entries valid), and `npm ci` → `npm test` → `npm run build`.
+It does not deploy.
 
 ### Deploy — Vercel
 
-The repo has also been connected to Vercel directly (its own git integration, not a GitHub Actions
-step) — it rebuilds and redeploys on every push the same way GitHub Pages does, independently. **No
-`vercel.json` exists and none is needed**: Vercel auto-detects this as a Vite project (framework preset
-"Vite") from `package.json`/`vite.config.js` at the repo root and defaults to `npm run build` +
-`dist` as the output directory, which already match. Routing needs no rewrite rules either, since every
-route in this app is a `#/...` hash fragment (§4) — the browser never asks the server for
-`/login` or `/vision-home` as a path, only ever for `/`, so there's nothing for Vercel to redirect.
-**The one thing that had to change for Vercel to work at all** was `base` in `vite.config.js` (above) —
-without the `VERCEL`-conditional, the site would build with GitHub Pages' `/defect-detection/` prefix
-baked in and every asset would 404 on Vercel's root-served domain. If Vercel's dashboard ever shows a
-"Root Directory" setting, it should stay blank/unset — `package.json` already sits at the git root
-(§1's "Git root" note), so there's no nested-folder monorepo indirection for Vercel to account for.
+The repo is connected to Vercel through its own git integration (not a GitHub Actions step): every
+push to `main` deploys production, and every PR gets a preview deployment. **No `vercel.json` exists
+and none is needed**: Vercel auto-detects Vite and defaults to `npm run build` + `dist`. No rewrite
+rules are needed either, since every route is a `#/...` hash fragment (§4). The "Root Directory"
+setting stays blank — `package.json` is at the git root.
 
 ### `.gitignore`
 
-```
-node_modules
-dist
-.DS_Store
-*.log
-*.timestamp-*.mjs
-```
+Covers `node_modules`, `dist`, logs, Vite timestamp files, `.env*` (except `.env.example`) and
+Claude Code local files.
 
 ---
 
 ## 3. File map
 
 ```
-veritx-web/
+defect-detection-website/
+├── CLAUDE.md / GOTCHA.md       # Claude rules; dated operational surprises
 ├── index.html                 # HTML shell; <html lang="es"> static default, overwritten at runtime
 ├── package.json / package-lock.json
 ├── vite.config.js
-├── TODO.md                     # running task/annotation scratchpad — see §13
-├── .github/workflows/deploy.yml
+├── .github/                    # ci.yml, PR + issue templates
+├── .claude/ .specify/ specs/   # Claude settings/skills, Spec Kit, feature specs (see §13)
 ├── public/
 │   └── favicon.svg
-├── docs/
-│   └── SDD.md                 # this file
+├── docs/                       # index in docs/README.md
+│   └── architecture/SDD.md     # this file
 └── src/
     ├── main.jsx                # ReactDOM root (wrapped in React.StrictMode), imports index.css, mounts <App/>
     ├── App.jsx                 # routing hook, ALL page-1 components (Header..Footer), <Site/>, <App/>
@@ -139,6 +113,7 @@ veritx-web/
     ├── translations.js          # ALL user-facing copy, both languages, one big object (see §5, §9)
     ├── auth.js                   # client-only simulated auth "backend" — see §14
     ├── DemoPage.jsx              # route #/demo — interactive defect-map demo
+    ├── *.test.js                  # Vitest tests (calculator formulas, auth.js)
     ├── CalculatorPage.jsx         # route #/calculator — interactive ROI/savings calculator (see §10.16)
     ├── AboutPage.jsx              # route #/about — "Who We Are" page (incl. the Mexico locator map)
     ├── PrivacyPolicyPage.jsx       # route #/privacy — Privacy Policy page, content in translations.js → privacyPage
@@ -1389,9 +1364,8 @@ casually reverse them without the user re-confirming — re-litigating them wast
 
 ## 11. Known gaps / intentionally unfinished
 
-> This is a point-in-time snapshot. **`TODO.md` (repo root) is the live, user-editable version of this
-> list** — check it for the current state and any notes the user has added since this was last synced,
-> and update both when you close an item out (see §13).
+> This is a point-in-time snapshot. **GitHub issues are the live list** — check them for the current
+> state, and update this section when you close an item out (see §13).
 
 - **The contact form does not submit anywhere — including appointment requests.** `Contact()`'s
   `handleSubmit` just calls `e.preventDefault()` and flips local `submitted` state to show a static
@@ -1414,7 +1388,7 @@ casually reverse them without the user re-confirming — re-litigating them wast
   terms-of-service page exists yet (separate TODO item, not done in this pass).
 - **No web font is actually loaded** — `index.css` requests `'Inter'` first in the font stack, but
   nothing imports/links Inter, so every browser silently falls back to its next system font.
-- **No automated tests, no linter/formatter config.**
+- **Minimal automated tests only** (calculator formulas, `auth.js`); no UI tests, no linter/formatter.
 - **The footer's LinkedIn icon has no real URL** — rendered as a non-interactive `<span>`, not an
   `<a>`, specifically because no company LinkedIn page was provided (see §10.26). Wire it up as a real
   link (and probably add `target="_blank" rel="noopener noreferrer"`, matching the WhatsApp link
@@ -1446,26 +1420,19 @@ casually reverse them without the user re-confirming — re-litigating them wast
 - **Add a language:** see the end of §5.
 - **Add a new customer-portal screen:** see §14.9.
 - **Regenerate the Mexico map:** see §14.7.
-- **Deploy:** just `git push` to `main`. Two targets build from the same push now — the GitHub Actions
-  workflow (GitHub Pages) and Vercel's own git integration (no Action needed for that one, Vercel builds
-  on push itself). See §2 for how `vite.config.js` tells the two builds apart.
+- **Deploy:** merge the PR into `main`; Vercel deploys production on its own. Each PR gets a Vercel
+  preview first (§2).
 
 ---
 
-## 13. `TODO.md` — the live task list
+## 13. Pending work — GitHub issues
 
-`TODO.md` (repo root, next to `README.md`) is a plain checklist file, explicitly requested as an
-open, low-friction place for the user to jot down pending items and annotations over time — it is
-**not** meant to be as structured or as exhaustively-reasoned as this SDD. Treat it as the
-**current source of truth for "what's left to do"**; §11 above is a snapshot frozen at the time it was
-written and will drift.
+Pending items live in **GitHub issues** (the old root `TODO.md` was migrated there in 2026-10).
+Features go through Spec Kit (`specs/NNN-name/`, see `CLAUDE.md`); small fixes go straight to a PR.
 
-- When you finish something listed there, check it off (`- [x]`) rather than deleting it, so there's a
-  visible record of what shipped.
-- When you notice a new gap or the user asks for something to be tracked "for later" rather than done
-  now, add it there instead of just mentioning it in chat.
-- If closing out or adding an item there makes §11 of this SDD stale or inaccurate, update §11 to match
-  in the same change — don't let the two documents disagree about what's outstanding.
+- When a PR closes an item, reference the issue (`Closes #N`).
+- New gaps or "track this for later" requests become new issues, not chat notes.
+- If closing or adding an issue makes §11 stale, update §11 in the same PR.
 
 ---
 
@@ -1477,7 +1444,7 @@ A full login → register → verify-email → forgot-password/recover-username 
 added from a detailed client-supplied spec (security-conscious: generic non-enumerating error messages,
 rate limiting, token expiry, hashed passwords, HttpOnly/Secure session cookies, audit logs — the kind of
 spec you'd hand a team with a real backend). **This site has no backend and never has** (§2: static
-Vite build, deployed to GitHub Pages/Vercel, no server runtime at all) — so rather than silently
+Vite build, deployed to Vercel, no server runtime at all) — so rather than silently
 dropping the request or blocking on "you need a backend first," the whole thing was built as a
 **client-only simulation**: a `localStorage`-backed "auth service" (`auth.js`) standing in for a real
 API, following the exact same precedent already established by the contact form and appointment picker
@@ -1521,8 +1488,8 @@ keep raw plaintext sitting in localStorage," not real credential security) — s
 **Dummy test login** (`test` / `vision`, per the original spec's "modo de prueba"): checked directly
 inside `login()`, gated behind `export const IS_DUMMY_LOGIN_ENABLED = import.meta.env.DEV`. This is a
 **real, load-bearing gate, not just a UI banner** — Vite replaces `import.meta.env.DEV` with the literal
-`false` at build time for a production build (`npm run build`, which is what both GitHub Pages and
-Vercel run — §2), so the entire dummy-login code path is dead code and unreachable on the live sites,
+`false` at build time for a production build (`npm run build`, which is what
+Vercel runs — §2), so the entire dummy-login code path is dead code and unreachable on the live site,
 satisfying the spec's "must be fully disabled in production" requirement for real, not just cosmetically
 via a banner. It only actually works under `npm run dev`. A logged-in dummy session resolves (in
 `getCurrentUser()`) to a fixed in-memory `DEMO_ACCOUNT` (2 active subscriptions, 2 upcoming payments) so
@@ -1710,7 +1677,7 @@ strings are generated, not authored; treat the file as a build artifact.
 | Rate limiting on failed logins | ⚠️ Partial — real UI/UX behavior, but enforced in `localStorage`, so trivially bypassed by clearing storage or calling `auth.js` directly. Real rate limiting needs a backend |
 | Session cookies with `Secure`/`HttpOnly`/`SameSite`, session-ID regeneration on login | ❌ Not applicable/implemented — there is no server to set cookies. "Session" is a `localStorage` value read by client JS, which is a fundamentally weaker model (readable/writable by any script on the page) than an HttpOnly cookie |
 | Audit logs (registration, login attempts, password/recovery events) | ❌ Not implemented — nothing is logged anywhere durable; `localStorage` state changes aren't an audit trail |
-| HTTPS everywhere | ✅ Real, but incidental — GitHub Pages and Vercel both serve over HTTPS by default, not something this app configures itself |
+| HTTPS everywhere | ✅ Real, but incidental — Vercel serves over HTTPS by default, not something this app configures itself |
 
 If a user asks to "make the login real" or "add a real backend," that's a substantially different,
 much larger project (an actual API + database + email service + hosting for that service) — not a

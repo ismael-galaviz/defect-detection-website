@@ -4,13 +4,13 @@ import { Icon } from './icons.jsx'
 
 // Defaults mirror the worked examples from the source ROI guide (Guia_Ingeniero_Calidad_ROI.docx),
 // except lineSpeed — see the note on CALC.lineSpeed below for why that one was redesigned.
-const DEFAULTS = {
+export const DEFAULTS = {
   defects: { rateBefore: 1.2, rateAfter: 0.2, volume: 500000, costPerDefect: 150 },
   laborHours: { hoursBefore: 12, hoursAfter: 2, hourlyCost: 80, shiftsPerYear: 250 },
   lineSpeed: { speedBefore: 70, speedAfter: 100, hoursPerYear: 4000, marginPerMeter: 0.5 },
 }
 
-const CALC = {
+export const CALC = {
   defects: (v) => Math.max(0, v.rateBefore - v.rateAfter) / 100 * v.volume * v.costPerDefect,
   laborHours: (v) => Math.max(0, v.hoursBefore - v.hoursAfter) * v.hourlyCost * v.shiftsPerYear,
   // Speed is m/min, so extra meters/year needs a min→hour conversion (×60) before it can be

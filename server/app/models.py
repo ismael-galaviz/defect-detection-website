@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, Enum, Identity, Index, Text, func
+from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, Identity, Index, Text, func
 from sqlalchemy.dialects.postgresql import INET, JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -37,3 +37,15 @@ class ContactRequest(_Row, Base):
     notification_status: Mapped[str] = mapped_column(
         Enum(*NOTIFICATION_STATUSES, name="notification_status"), nullable=False,
         server_default="pending")
+
+
+class Booking(_Row, Base):
+    """A reserved meeting slot; at most one per slot_start (FR-009)."""
+
+    __tablename__ = "bookings"
+
+    contact_request_id: Mapped[int] = mapped_column(
+        ForeignKey("contact_requests.id", ondelete="CASCADE"), nullable=False)
+    slot_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False,
+                                                 unique=True)
+    calendar_event_id: Mapped[str | None] = mapped_column(Text)

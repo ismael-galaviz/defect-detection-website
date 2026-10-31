@@ -70,9 +70,11 @@ Decisions behind `plan.md`. Owner decisions from the grill-me interview are mark
   the insert violates uniqueness → 409 `slot_unavailable`; if event creation fails → delete the
   row, 503 `calendar_unavailable`.
 - **Visitor's preferred tool**: the form already asks for a preferred tool (Zoom, Teams, …). The
-  event always gets a Meet link; the preference is written into the event description and the
-  staff email so staff can send another link. (Resolves a conflict between the spec and the
-  existing form; no UI change.)
+  event always gets a Meet link; the preference goes in the staff email so staff can send another
+  link. (Resolves a conflict between the spec and the existing form; no UI change.)
+- **Invite content**: Google emails the invitation to the visitor-typed address, so the event's
+  title and description are fixed copy per language (`emails.EVENT_COPY`) — same no-echo rule as
+  R10. Visitor details appear only in the staff email.
 
 ## R9. Attachments
 - **Decision**: Stored in Postgres (`bytea`) **(owner)**. Two-step upload: `POST /api/attachments`

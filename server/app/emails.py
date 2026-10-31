@@ -174,3 +174,53 @@ def staff_calculator(payload: dict) -> tuple[str, str]:
     header = [f"Nombre: {payload.get('name') or '—'}", f"Correo: {payload['email']}",
               f"Idioma del visitante: {payload['lang']}", "", "Copia de lo que recibió:", ""]
     return subject, "\n".join(header) + body
+
+
+# Calendar invites go to the visitor-typed address too, so they get fixed copy only.
+EVENT_COPY = {
+    "es": ("VeritX Vision — Demo", "Reunión con el equipo de VeritX Vision. Usa el enlace de "
+           "videollamada de esta invitación. Si necesitas cambiar el horario, responde al correo "
+           "de confirmación."),
+    "en": ("VeritX Vision — Demo", "Meeting with the VeritX Vision team. Use the video-call link "
+           "in this invitation. If you need another time, reply to the confirmation email."),
+    "fr": ("VeritX Vision — Démo", "Rendez-vous avec l'équipe VeritX Vision. Utilisez le lien de "
+           "visioconférence de cette invitation. Pour changer d'horaire, répondez à l'e-mail de "
+           "confirmation."),
+}
+
+VISITOR_BOOKING = {
+    "es": ("Tu reunión con VeritX Vision está agendada",
+           "Tu reunión con VeritX Vision quedó agendada para el {slot} (hora de Ciudad de México)."
+           "\n\nRecibirás una invitación de calendario con el enlace de videollamada. Si necesitas "
+           "cambiar el horario, responde a este correo."),
+    "en": ("Your meeting with VeritX Vision is booked",
+           "Your meeting with VeritX Vision is booked for {slot} (Mexico City time).\n\nYou will "
+           "receive a calendar invitation with the video-call link. If you need another time, "
+           "reply to this email."),
+    "fr": ("Votre rendez-vous avec VeritX Vision est confirmé",
+           "Votre rendez-vous avec VeritX Vision est prévu le {slot} (heure de Mexico).\n\nVous "
+           "recevrez une invitation d'agenda avec le lien de visioconférence. Pour changer "
+           "d'horaire, répondez à cet e-mail."),
+}
+
+
+def slot_label(slot_iso: str) -> str:
+    """'2026-11-04T10:00:00-06:00' → '2026-11-04 10:00'. Language-neutral on purpose."""
+    return f"{slot_iso[:10]} {slot_iso[11:16]}"
+
+
+def visitor_booking(lang: str, slot_iso: str) -> tuple[str, str]:
+    subject, body = VISITOR_BOOKING[lang]
+    return subject, f"{body.format(slot=slot_label(slot_iso))}\n\n{SIGNATURE[lang]}\n"
+
+
+def staff_booking(payload: dict) -> tuple[str, str]:
+    subject = (f"[Sitio] Reunión agendada {slot_label(payload['slot_start'])}: "
+               f"{payload.get('name', '')} ({payload.get('company', '')})")
+    lines = [f"Reunión agendada para el {slot_label(payload['slot_start'])} (CDMX). El evento "
+             "ya está en el calendario con enlace de Meet.", ""]
+    lines += [f"{label}: {payload[key]}" for key, label in _STAFF_FIELDS if payload.get(key)]
+    if payload.get("video_tool") and payload["video_tool"] != "Google Meet":
+        lines += ["", f"Prefiere {payload['video_tool']}: envíale otro enlace si hace falta."]
+    lines += ["", "Responde a este correo para contestarle directamente."]
+    return subject, "\n".join(lines) + "\n"

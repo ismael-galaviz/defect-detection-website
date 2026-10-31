@@ -79,8 +79,9 @@ def create_app() -> FastAPI:
     def health():
         return {"ok": True}
 
-    from app.routes import forms
+    from app.routes import booking, forms
     api.include_router(forms.router)
+    api.include_router(booking.router)
     app.include_router(api)
     return app
 

@@ -73,7 +73,7 @@ class CalculatorIn(_Form):
         return self
 
 
-def _rate_limited(db: Session, ip: str) -> bool:
+def rate_limited(db: Session, ip: str) -> bool:
     since = func.now() - RATE_WINDOW
     count = db.scalar(select(func.count()).select_from(ContactRequest).where(
         ContactRequest.ip == ip, ContactRequest.created_at > since))
@@ -84,7 +84,10 @@ def _messages(row: ContactRequest) -> list[tuple[str, str, str, str | None]]:
     """(to, subject, text, reply_to) for each email a stored request triggers."""
     staff = get_settings().staff_email
     p = row.payload
-    if row.kind == "calculator":
+    if row.kind == "meeting":
+        staff_mail = emails.staff_booking(p)
+        visitor_mail = emails.visitor_booking(row.lang, p["slot_start"])
+    elif row.kind == "calculator":
         staff_mail = emails.staff_calculator(p)
         visitor_mail = emails.visitor_calculator(row.lang, p["currency"], p["inputs"],
                                                  p["results"])
@@ -115,7 +118,7 @@ def _accept(kind: str, body: _Form, request: Request, background: BackgroundTask
         log.info("honeypot hit", extra={"kind": kind})
         return {"ok": True}
     ip = client_ip(request)
-    if _rate_limited(db, ip):
+    if rate_limited(db, ip):
         return error(429, "rate_limited")
     row = ContactRequest(kind=kind, lang=body.lang, email=body.email, ip=ip,
                          payload=body.model_dump(exclude={"website"}, exclude_none=True))

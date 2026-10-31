@@ -19,7 +19,7 @@ through a command-line tool. Each story ships as its own PR. Details: [research.
 **Language/Version**: Python 3.12 (backend); JavaScript/React 18 + Vite 5 (existing frontend)
 
 **Primary Dependencies**: FastAPI, Uvicorn, Pydantic v2, SQLAlchemy 2, psycopg 3, Alembic,
-argon2-cffi, httpx, python-multipart. Dev: pytest, ruff. Frontend: no new dependencies.
+argon2-cffi, httpx, python-multipart, tzdata. Dev: pytest, ruff. Frontend: no new dependencies.
 
 **Storage**: Railway Postgres 16 (attachments as `bytea`)
 

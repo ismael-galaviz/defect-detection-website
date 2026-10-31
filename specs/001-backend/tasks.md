@@ -74,13 +74,13 @@ Phases 1–2 ship inside PR 1 together with US1.
 **Independent test**: quickstart.md step 2.
 
 ### Tests (write first)
-- [ ] T025 [P] [US2] Tests in `server/tests/test_slots.py` (pure function): grid Mon–Fri 09,10,11,12,13,16,17 CDMX; excludes weekends, <24 h ahead, >60 days, busy intervals overlapping any part of the hour, already-booked slots; correct `-06:00` offsets
-- [ ] T026 [P] [US2] Tests in `server/tests/test_booking.py`: `GET /api/availability` range validation (422 > 62 days) and 503 when Google fails; `POST /api/bookings` → 201 + event created with visitor attendee and video_tool in description; same slot twice → second 409 `slot_unavailable`; slot not on grid → 422; event creation failure → 503 and no booking row left
+- [X] T025 [P] [US2] Tests in `server/tests/test_slots.py` (pure function): grid Mon–Fri 09,10,11,12,13,16,17 CDMX; excludes weekends, <24 h ahead, >60 days, busy intervals overlapping any part of the hour, already-booked slots; correct `-06:00` offsets
+- [X] T026 [P] [US2] Tests in `server/tests/test_booking.py`: `GET /api/availability` range validation (422 > 62 days) and 503 when Google fails; `POST /api/bookings` → 201 + event created with visitor attendee and video_tool in description; same slot twice → second 409 `slot_unavailable`; slot not on grid → 422; event creation failure → 503 and no booking row left
 
 ### Implementation
-- [ ] T027 [US2] Add `Booking` model (unique `slot_start`, `calendar_event_id`, FK to contact_requests) in `server/app/models.py` and migration `server/migrations/versions/0002_bookings.py`
-- [ ] T028 [US2] Implement `server/app/booking.py`: `free_slots(range, busy, booked, now)` pure function per T025
-- [ ] T029 [US2] Implement `server/app/routes/booking.py`: `GET /api/availability`, `POST /api/bookings` (store contact_request kind `meeting`, insert booking, create event, rollback on failure, staff + visitor emails) per research R8
+- [X] T027 [US2] Add `Booking` model (unique `slot_start`, `calendar_event_id`, FK to contact_requests) in `server/app/models.py` and migration `server/migrations/versions/0002_bookings.py`
+- [X] T028 [US2] Implement `server/app/booking.py`: `free_slots(range, busy, booked, now)` pure function per T025
+- [X] T029 [US2] Implement `server/app/routes/booking.py`: `GET /api/availability`, `POST /api/bookings` (store contact_request kind `meeting`, insert booking, create event, rollback on failure, staff + visitor emails) per research R8
 - [ ] T030 [US2] Change `AppointmentPicker` and schedule mode of `Contact()` in `src/App.jsx`: fetch `/api/availability` for the visible month, show only returned slots, handle 409 (refresh slots + message), 503 fallback to message mode (FR-010); replace fixed `APPT_TIME_SLOTS` usage; copy in es/en/fr in `src/translations.js`
 
 **Checkpoint**: quickstart step 2 passes → **PR 2** (`Closes #3`).

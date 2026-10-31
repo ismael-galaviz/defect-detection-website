@@ -1,4 +1,4 @@
-// Client-only, localStorage-backed auth simulation. There is no backend in this repo (see docs/SDD.md
+// Client-only, localStorage-backed auth simulation. There is no backend in this repo (see docs/architecture/SDD.md
 // §11/§14) — this exists so the Login/Register/Recovery/Vision Home screens are fully clickable in the
 // demo, not to provide real security. Passwords never leave the browser, but SHA-256 in JS is not a
 // substitute for server-side bcrypt/Argon2, and nothing here is rate-limited or audited server-side.
@@ -44,7 +44,7 @@ const COMMON_PASSWORDS = [
 ]
 
 // Vite replaces import.meta.env.DEV with `false` in production builds, so this branch (and every UI
-// path that checks it) is dead code — and therefore unreachable — once built for GitHub Pages.
+// path that checks it) is dead code — and therefore unreachable — once built for production.
 export const IS_DUMMY_LOGIN_ENABLED = import.meta.env.DEV
 
 export const DEMO_ACCOUNT = {

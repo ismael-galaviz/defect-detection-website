@@ -42,10 +42,10 @@ Question 2 can change the rest (for example, "phone" may rule out a headless-onl
 | Project type | Marketing website + client-only simulated portal |
 | Devices / environments | Browser (phone, tablet, desktop) |
 | Frontend | React 18 + Vite 5 |
-| Backend | None |
-| Database | None |
+| Backend | None yet; future backend hosted on Railway (runtime TBD in its spec) |
+| Database | None yet (TBD in the backend spec) |
 | Auth | None (simulated in `localStorage`) |
-| Deploy | Vercel |
+| Deploy | Vercel (frontend), Railway (backend) |
 | AI / agents | None |
 | Quality tools | Vitest |
 | Test-first | minimal |

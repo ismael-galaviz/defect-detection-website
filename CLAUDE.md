@@ -11,7 +11,8 @@ its format; delete entries whose *Remove when* holds. A `SessionStart` hook flag
 
 ## Project
 - VeritX Vision marketing site + client-only simulated customer portal. Stack: React 18 + Vite 5,
-  plain CSS, Vitest, Vercel (`docs/decisions/001-stack.md`). No backend.
+  plain CSS, Vitest, Vercel (`docs/decisions/001-stack.md`). No backend yet; when built it will be
+  hosted on Railway (runtime/DB decided in its spec, issue #8).
 - Read `docs/architecture/SDD.md` before changing content or behavior — §10 holds established
   decisions, §11 known gaps, §14 the portal.
 - Commands: install `npm install` · dev `npm run dev` · test `npm test` · build `npm run build` ·
@@ -80,4 +81,5 @@ Every document lives in a `docs/` subfolder; every new one gets a row in `docs/R
   confirmation.
 
 ## Deployment
-- Vercel only: preview per PR, production on merge to `main` (owner approves the merge).
+- Frontend: Vercel — preview per PR, production on merge to `main` (owner approves the merge).
+- Backend (future): Railway. Production deploys only with the owner's approval.

@@ -21,7 +21,8 @@ client-side routed.
 - **Live site (Vercel):** the repo is also connected to Vercel directly — URL not recorded here yet
   (fill in once known; it'll be a `*.vercel.app` subdomain unless a custom domain is attached).
 - **GitHub repo:** https://github.com/ismael-galaviz/defect-detection-website (branch `main`)
-- **Hosting:** Vercel only, via Vercel's own git integration (§2). GitHub Pages was dropped
+- **Hosting:** Vercel (frontend) via Vercel's own git integration (§2). A future backend will be
+  hosted on Railway (ADR 001, issue #8); nothing runs there yet. GitHub Pages was dropped
   (ADR `docs/decisions/001-stack.md`).
 
 ---

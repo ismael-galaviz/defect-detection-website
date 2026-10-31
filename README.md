@@ -11,8 +11,8 @@ simulated.
 
 ## Stack
 
-React 18 + Vite 5, plain CSS, Vitest. No backend — the contact form, appointment booking and customer
-portal are client-only prototypes. Rationale: [`docs/decisions/001-stack.md`](docs/decisions/001-stack.md).
+React 18 + Vite 5, plain CSS, Vitest. No backend yet — the contact form, appointment booking and
+customer portal are client-only prototypes. The future backend will be hosted on Railway (issue #8). Rationale: [`docs/decisions/001-stack.md`](docs/decisions/001-stack.md).
 
 ## Commands
 
@@ -30,7 +30,7 @@ Spec-driven with agent-foundry conventions (see `CLAUDE.md` and `docs/process/RU
 
 ## Deploy
 
-Vercel only, via Vercel's git integration: every PR gets a preview, merging to `main` deploys
+Frontend on Vercel, via Vercel's git integration: every PR gets a preview, merging to `main` deploys
 production. No `vercel.json` needed — Vite is auto-detected and routes are `#/...` hash fragments.
 
 ## Notes

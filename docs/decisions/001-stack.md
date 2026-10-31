@@ -17,8 +17,8 @@ so Pages was serving broken assets. There were no tests.
 | Project type | Marketing website + client-only simulated customer portal |
 | Devices | Browser: phone, tablet, desktop (responsive) |
 | Frontend | React 18 + Vite 5, plain CSS, hash routing |
-| Backend / DB / Auth | None — `auth.js` simulates auth in `localStorage` (SDD §14.8) |
-| Deploy | **Vercel only** (preview per PR, production on `main`). GitHub Pages dropped. |
+| Backend / DB / Auth | None yet — `auth.js` simulates auth in `localStorage` (SDD §14.8). The future backend will be **hosted on Railway**; runtime, DB, auth and repo location are decided in its spec (issue #8). |
+| Deploy | Frontend: **Vercel** (preview per PR, production on `main`); GitHub Pages dropped. Backend: **Railway** (once it exists). |
 | AI / agents | None in the site |
 | Quality tools | Vitest; no linter yet |
 | Test-first | **Minimal** — see below |
@@ -32,4 +32,7 @@ mostly static content; full test-first would cost more than it catches.
 
 - One deploy target; `vite.config.js` no longer needs a `VERCEL`-conditional base.
 - CI (`.github/workflows/ci.yml`) runs `npm test` and `npm run build` on every PR.
-- A real backend (contact form, bookings, portal) needs its own ADR before work starts.
+- Railway is fixed as the backend host. The backend's runtime, database, auth approach and repo
+  location still need their own ADR, written in the backend spec (issue #8) before work starts.
+- The frontend will need the backend URL as an environment variable (Vercel) and the backend will
+  need CORS for the Vercel domains; record both in `docs/deployment/` when they exist.

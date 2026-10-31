@@ -43,4 +43,5 @@ This repo adopted the agent-foundry template retroactively (2026-10-31). The sta
 - Code, tests and skills cite docs by path: moving a doc means updating them too.
 
 ## 8. Deploy
-- Vercel only: preview per PR, production on merge to `main` with the owner's approval.
+- Frontend on Vercel: preview per PR, production on merge to `main` with the owner's approval.
+- Backend (future) on Railway: production only with the owner's approval.

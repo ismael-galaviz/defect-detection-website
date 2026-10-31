@@ -11,6 +11,8 @@ import sys
 import urllib.parse
 import urllib.request
 
+from sqlalchemy import select
+
 from app.google import SCOPES, TOKEN_URL
 
 
@@ -56,11 +58,45 @@ def cmd_google_auth(_args) -> int:
     return 0
 
 
+def _pending():
+    from app.db import new_session
+    from app.models import ContactRequest
+
+    with new_session() as db:
+        return db.scalars(select(ContactRequest).where(
+            ContactRequest.notification_status != "sent").order_by(ContactRequest.id)).all()
+
+
+def cmd_list(args) -> int:
+    if args.what == "pending":
+        rows = _pending()
+        for r in rows:
+            print(f"{r.id}\t{r.created_at:%Y-%m-%d %H:%M}\t{r.kind}\t{r.email}\t"
+                  f"{r.notification_status}")
+        print(f"{len(rows)} pending notification(s)")
+    return 0
+
+
+def cmd_resend_pending(_args, google=None) -> int:
+    from app.google import get_google
+    from app.routes.forms import send_notifications
+
+    google = google or get_google()
+    results = [send_notifications(r.id, google) for r in _pending()]
+    print(f"resent {results.count('sent')}, still failing {results.count('failed')}")
+    return 0 if "failed" not in results else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m app.cli", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("google-auth", help="get GOOGLE_REFRESH_TOKEN").set_defaults(
         func=cmd_google_auth)
+    p = sub.add_parser("list", help="print records")
+    p.add_argument("what", choices=["pending"])
+    p.set_defaults(func=cmd_list)
+    sub.add_parser("resend-pending", help="retry unsent notification emails").set_defaults(
+        func=cmd_resend_pending)
     return parser
 
 

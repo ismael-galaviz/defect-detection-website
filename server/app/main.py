@@ -1,6 +1,5 @@
 """FastAPI app: everything is served under /api (same origin as the site via the Vercel rewrite)."""
 
-import ipaddress
 import json
 import logging
 import time
@@ -8,9 +7,9 @@ from fnmatch import fnmatchcase
 
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
 
 from app.config import get_settings
+from app.http import error
 
 
 class JsonFormatter(logging.Formatter):
@@ -34,26 +33,13 @@ log = logging.getLogger("app")
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 
-def client_ip(request: Request) -> str:
-    """Leftmost X-Forwarded-For entry (set by Vercel). Best-effort: spoofable if Railway is
-    called directly, so only used for soft limits (research R6)."""
-    candidate = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
-    try:
-        return str(ipaddress.ip_address(candidate))
-    except ValueError:
-        return request.client.host if request.client else "0.0.0.0"  # noqa: S104
-
-
 def origin_allowed(origin: str) -> bool:
     return any(fnmatchcase(origin, pattern) for pattern in get_settings().public_site_origins)
 
 
-def error(status: int, code: str, **extra) -> JSONResponse:
-    return JSONResponse({"error": code, **extra}, status_code=status)
-
-
 _FIELD_CODES = {
-    "missing": "required", "string_too_long": "too_long", "string_too_short": "required"}
+    "missing": "required", "string_too_long": "too_long", "string_too_short": "required",
+    "invalid_email": "invalid_email"}
 
 
 def _field_errors(exc: RequestValidationError) -> dict[str, str]:
@@ -61,9 +47,7 @@ def _field_errors(exc: RequestValidationError) -> dict[str, str]:
     for err in exc.errors():
         loc = [str(p) for p in err["loc"] if p != "body"]
         name = ".".join(loc) or "body"
-        ctx_code = (err.get("ctx") or {}).get("error")
-        code = str(ctx_code) if ctx_code else _FIELD_CODES.get(err["type"], "invalid")
-        fields.setdefault(name, code)
+        fields.setdefault(name, _FIELD_CODES.get(err["type"], "invalid"))
     return fields
 
 

@@ -1,4 +1,4 @@
-from app.main import client_ip
+from app.http import client_ip
 
 
 def test_health(client):

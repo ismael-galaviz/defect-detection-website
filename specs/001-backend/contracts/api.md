@@ -13,13 +13,16 @@ Common codes: `invalid` (422), `rate_limited` (429), `not_found` (404), `unauthe
 | Method & path | Body | Success | Errors |
 |---|---|---|---|
 | `GET /health` | — | 200 `{"ok": true}` | — |
-| `POST /contact` | `{kind: "message", name, company, email, country?, stage?, message?, lang, website}` | 202 | 422, 429 |
+| `POST /contact` | `{name, company, email, country?, stage?, message?, preferred_slot?: "YYYY-MM-DD HH:MM", video_tool?, lang, website}` | 202 | 422, 429 |
 | `POST /calculator-results` | `{name?, email, lang, currency, inputs: {section: {field: number}}, results: {section: number, total: number}}` | 202 | 422, 429 |
 | `GET /availability?from=YYYY-MM-DD&to=YYYY-MM-DD` | — | 200 `{"timezone": "America/Mexico_City", "slots": ["2026-11-03T10:00:00-06:00", …]}` | 422 (range > 62 days), 503 `calendar_unavailable` |
 | `POST /bookings` | `{slot_start, name, company, email, country?, stage?, video_tool?, message?, lang, website}` | 201 `{"slot_start": …}` | 409 `slot_unavailable`, 422, 429, 503 `calendar_unavailable` |
 
 `website` is the honeypot: non-empty → respond as success, store nothing, send nothing.
-`calculator-results`: numbers only; at most 3 sections × 4 fields.
+`calculator-results`: numbers only; section and field keys must be the calculator's own
+(`defects`, `laborHours`, `lineSpeed` and their fields; results may add `total`), anything else → 422.
+`contact` with `preferred_slot`: interim meeting request until `/bookings` (Story 2) ships; staff
+confirm the time by hand. Unknown fields → 422.
 
 ## Auth
 

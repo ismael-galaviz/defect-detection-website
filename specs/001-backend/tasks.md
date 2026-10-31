@@ -52,14 +52,14 @@ Phases 1–2 ship inside PR 1 together with US1.
 **Independent test**: quickstart.md step 1.
 
 ### Tests (write first)
-- [ ] T016 [P] [US1] Tests in `server/tests/test_forms.py`: valid contact → 202, row stored, staff + visitor emails sent; 422 field errors; honeypot → 202 and nothing stored/sent; 6th submission from one IP in 10 min → 429; email failure → row stored with `notification_status=failed`; calculator payload rejects non-numbers and >3 sections
-- [ ] T017 [P] [US1] Tests in `server/tests/test_emails.py`: every visitor template (es/en/fr) contains none of the submitted free-text values (name, company, message); staff template contains all fields
+- [X] T016 [P] [US1] Tests in `server/tests/test_forms.py`: valid contact → 202, row stored, staff + visitor emails sent; 422 field errors; honeypot → 202 and nothing stored/sent; 6th submission from one IP in 10 min → 429; email failure → row stored with `notification_status=failed`; calculator payload rejects non-numbers and >3 sections
+- [X] T017 [P] [US1] Tests in `server/tests/test_emails.py`: every visitor template (es/en/fr) contains none of the submitted free-text values (name, company, message); staff template contains all fields
 
 ### Implementation
-- [ ] T018 [US1] Add `ContactRequest` model (kind, lang, email, payload jsonb, ip, notification_status) in `server/app/models.py` and migration `server/migrations/versions/0001_contact_requests.py` with index `(ip, created_at)`
-- [ ] T019 [P] [US1] Implement `server/app/emails.py`: templates for staff contact/calculator/booking notifications and visitor confirmation/calculator results in es/en/fr; currency formatting per lang (R10)
-- [ ] T020 [US1] Implement `server/app/routes/forms.py`: `POST /api/contact`, `POST /api/calculator-results` (Pydantic models per contracts/api.md, honeypot, IP rate limit from `contact_requests`, commit then send in background task updating `notification_status`)
-- [ ] T021 [US1] Add `list pending` and `resend-pending` commands in `server/app/cli.py`
+- [X] T018 [US1] Add `ContactRequest` model (kind, lang, email, payload jsonb, ip, notification_status) in `server/app/models.py` and migration `server/migrations/versions/0001_contact_requests.py` with index `(ip, created_at)`
+- [X] T019 [P] [US1] Implement `server/app/emails.py`: templates for staff contact/calculator/booking notifications and visitor confirmation/calculator results in es/en/fr; currency formatting per lang (R10)
+- [X] T020 [US1] Implement `server/app/routes/forms.py`: `POST /api/contact`, `POST /api/calculator-results` (Pydantic models per contracts/api.md, honeypot, IP rate limit from `contact_requests`, commit then send in background task updating `notification_status`)
+- [X] T021 [US1] Add `list pending` and `resend-pending` commands in `server/app/cli.py`
 - [ ] T022 [P] [US1] Create `src/api.js`: `post(path, body)` / `get(path)` with JSON, credentials `same-origin`, throws `{status, error, fields}`; network failure → `{error: 'network'}`
 - [ ] T023 [US1] Wire `Contact()` message mode in `src/App.jsx` to `POST /api/contact` (controlled field values, hidden `website` input, loading state, field errors, network/429 error message per FR-031) and add copy in all three languages in `src/translations.js`
 - [ ] T024 [US1] Wire `handleSendResults` in `src/CalculatorPage.jsx` to `POST /api/calculator-results` with inputs, computed `CALC` results, currency and lang; errors as in T023

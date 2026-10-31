@@ -1,0 +1,46 @@
+import pytest
+
+from app import emails
+
+FREE_TEXT = {
+    "name": "ZZNAMEZZ http://spam.example", "company": "ZZCOMPANYZZ",
+    "message": "ZZMESSAGEZZ buy now", "country": "ZZCOUNTRYZZ", "stage": "ZZSTAGEZZ",
+    "email": "visitor@example.com", "preferred_slot": "2026-11-03 10:00", "video_tool": "ZZTOOLZZ",
+}
+INPUTS = {"defects": {"rateBefore": 1.2, "rateAfter": 0.2, "volume": 500000, "costPerDefect": 150}}
+RESULTS = {"defects": 750000, "total": 750000}
+
+
+@pytest.mark.parametrize("lang", ["es", "en", "fr"])
+@pytest.mark.parametrize("meeting", [False, True])
+def test_visitor_confirmation_never_echoes_free_text(lang, meeting):
+    subject, text = emails.visitor_contact(lang, meeting=meeting)
+    for value in FREE_TEXT.values():
+        if value != "visitor@example.com" and value != "2026-11-03 10:00":
+            assert value not in subject and value not in text
+
+
+@pytest.mark.parametrize("lang", ["es", "en", "fr"])
+def test_visitor_calculator_has_numbers_and_labels_only(lang):
+    subject, text = emails.visitor_calculator(lang, "MXN", INPUTS, RESULTS)
+    assert "ZZ" not in text
+    assert "750" in text and "MXN" in text
+    assert emails.CALC_LABELS[lang]["sections"]["defects"] in text
+
+
+def test_languages_differ():
+    es, en, fr = (emails.visitor_contact(lang, meeting=False) for lang in ("es", "en", "fr"))
+    assert es != en and fr != en
+
+
+def test_staff_contact_contains_every_field():
+    subject, text = emails.staff_contact(FREE_TEXT)
+    for value in FREE_TEXT.values():
+        assert value in text
+    assert "ZZNAMEZZ" in subject
+
+
+def test_money_formatting_per_language():
+    assert emails.money(4550000, "MXN", "en") == "4,550,000 MXN"
+    assert emails.money(4550000, "MXN", "es") == "4,550,000 MXN"
+    assert emails.money(4550000, "EUR", "fr") == "4 550 000 EUR"

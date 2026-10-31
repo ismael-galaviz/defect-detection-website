@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLanguage } from './i18n.jsx'
 import { Icon } from './icons.jsx'
-import { requestPasswordReset, validateResetToken, resetPassword, isPasswordCommon } from './auth.js'
+import { passwordProblem, requestPasswordReset, resetPassword } from './auth.js'
+import { errorMessage } from './api.js'
 
 function getTokenFromHash() {
   const query = window.location.hash.split('?')[1] || ''
@@ -14,23 +15,26 @@ export default function ForgotPasswordPage() {
 }
 
 function RequestView() {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const a = t.auth.forgotPassword
-  const [identifier, setIdentifier] = useState('')
+  const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null)
+  const [error, setError] = useState(null)
   const resultRef = useRef(null)
 
   useEffect(() => {
     if (result) resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [result])
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     setSubmitting(true)
-    const res = requestPasswordReset(identifier)
+    setError(null)
+    const res = await requestPasswordReset(email, lang)
     setSubmitting(false)
-    setResult(res)
+    if (res.ok) setResult(res)
+    else setError(errorMessage(res, t.formErrors))
   }
 
   return (
@@ -46,32 +50,23 @@ function RequestView() {
           {result ? (
             <div ref={resultRef}>
               <div className="form-success"><p>{a.genericMessage}</p></div>
-              {result.token && (
-                <div className="dummy-panel">
-                  <div className="dummy-panel-head">
-                    <Icon name="flask" size={18} />
-                    <strong>{a.devPanelLabel}</strong>
-                  </div>
-                  <a className="dev-panel-link" href={`#/forgot-password?token=${result.token}`}>
-                    {window.location.origin + window.location.pathname}#/forgot-password?token={result.token}
-                  </a>
-                </div>
-              )}
               <p className="auth-switch"><a href="#/login">{a.backToLogin}</a></p>
             </div>
           ) : (
             <form className="lead-form auth-card" onSubmit={handleSubmit}>
               <div className="form-row">
-                <label htmlFor="identifier">{a.identifier}</label>
+                <label htmlFor="email">{a.identifier}</label>
                 <input
-                  id="identifier"
-                  type="text"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder={a.identifierPlaceholder}
+                  autoComplete="email"
                   required
                 />
               </div>
+              {error && <p className="field-error" role="alert">{error}</p>}
               <button type="submit" className="btn btn-dark" style={{ width: '100%' }} disabled={submitting}>
                 {submitting ? a.submitting : a.submit}
               </button>
@@ -87,9 +82,8 @@ function RequestView() {
 function ResetPasswordView({ token }) {
   const { t } = useLanguage()
   const a = t.auth.resetPassword
-  // Frozen at mount: resetPassword() deletes the token on success, so re-validating on every
-  // render would flip this to "invalid" right after a successful submit re-renders the page.
-  const [check] = useState(() => validateResetToken(token))
+  // The server validates the link on submit (it can't be checked without using it up).
+  const [invalid, setInvalid] = useState(false)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -104,21 +98,19 @@ function ResetPasswordView({ token }) {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (password.length < 12) return setError(a.errors.passwordShort)
-    if (isPasswordCommon(password)) return setError(a.errors.passwordCommon)
-    if (password !== confirmPassword) return setError(a.errors.passwordMismatch)
+    const problem = passwordProblem(password, confirmPassword)
+    if (problem) return setError(a.errors[problem])
     setError(null)
     setSubmitting(true)
     const res = await resetPassword(token, password)
     setSubmitting(false)
-    if (!res.ok) {
-      setError(a.invalidBody)
-      return
-    }
-    setDone(true)
+    if (res.ok) setDone(true)
+    else if (res.error === 'link_expired') setInvalid(true)
+    else if (res.fields?.password) setError(a.errors.passwordCommon)
+    else setError(errorMessage(res, t.formErrors))
   }
 
-  if (!check.ok) {
+  if (invalid) {
     return (
       <main>
         <section className="demo-hero">

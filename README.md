@@ -1,9 +1,8 @@
 # VeritX Vision — Website
 
 Trilingual (Spanish/English/French) marketing website for VeritX Vision, an AI-powered fabric defect
-detection system for textile manufacturers. Includes a client-only simulated customer portal (login,
-registration, recovery, account dashboard) — see `docs/architecture/SDD.md` §14 for what's real versus
-simulated.
+detection system for textile manufacturers, with an invite-only customer portal (Vision Home) — see
+`docs/architecture/SDD.md` §14.
 
 - Technical/design record: [`docs/architecture/SDD.md`](docs/architecture/SDD.md)
 - Docs index: [`docs/README.md`](docs/README.md) · Claude rules: [`CLAUDE.md`](CLAUDE.md)
@@ -11,8 +10,9 @@ simulated.
 
 ## Stack
 
-React 18 + Vite 5, plain CSS, Vitest. No backend yet — the contact form, appointment booking and
-customer portal are client-only prototypes. The future backend will be hosted on Railway (issue #8). Rationale: [`docs/decisions/001-stack.md`](docs/decisions/001-stack.md).
+React 18 + Vite 5, plain CSS, Vitest. Backend: FastAPI + Postgres in `server/`, on Railway
+([`docs/decisions/002-backend-stack.md`](docs/decisions/002-backend-stack.md)) — contact form,
+calculator results, meeting booking and portal accounts. Rationale: [`docs/decisions/001-stack.md`](docs/decisions/001-stack.md).
 
 ## Commands
 
@@ -36,5 +36,4 @@ production. No `vercel.json` needed — Vite is auto-detected and routes are `#/
 ## Notes
 
 Marketing content (specs, comparisons, hero copy) is placeholder pending real product photography,
-demo footage and validated specs — see `docs/architecture/SDD.md` §11. Treat the customer portal as a
-UI/UX demo, not a real auth system.
+demo footage and validated specs — see `docs/architecture/SDD.md` §11.

@@ -1,34 +1,31 @@
 import { useState } from 'react'
 import { useLanguage } from './i18n.jsx'
 import { Icon } from './icons.jsx'
-import { login, IS_DUMMY_LOGIN_ENABLED } from './auth.js'
+import { login } from './auth.js'
+import { errorMessage } from './api.js'
 
 export default function LoginPage() {
   const { t } = useLanguage()
   const a = t.auth
-  const [identifier, setIdentifier] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
-  function fillDummy() {
-    setIdentifier('test')
-    setPassword('vision')
-    setError(null)
-  }
-
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
     setSubmitting(true)
-    const result = await login(identifier, password)
+    const result = await login(email, password)
     setSubmitting(false)
     if (result.ok) {
       window.location.hash = '#/vision-home'
       return
     }
-    setError(result.error)
+    if (result.error === 'locked') setError(a.login.errors.locked.replace('{minutes}', result.minutes))
+    else if (result.error === 'invalid_credentials' || result.error === 'invalid') setError(a.login.errors.invalid_credentials)
+    else setError(errorMessage(result, t.formErrors))
   }
 
   return (
@@ -42,27 +39,14 @@ export default function LoginPage() {
 
       <section className="demo-section">
         <div className="container auth-shell">
-          {IS_DUMMY_LOGIN_ENABLED && (
-            <div className="dummy-panel">
-              <div className="dummy-panel-head">
-                <Icon name="flask" size={18} />
-                <strong>{a.dummy.bannerTitle}</strong>
-              </div>
-              <p>{a.dummy.bannerBody}</p>
-              <button type="button" className="btn btn-outline" onClick={fillDummy}>
-                {a.dummy.fillButton}
-              </button>
-            </div>
-          )}
-
           <form className="lead-form auth-card" onSubmit={handleSubmit}>
             <div className="form-row">
-              <label htmlFor="identifier">{a.login.identifier}</label>
+              <label htmlFor="email">{a.login.identifier}</label>
               <input
-                id="identifier"
-                type="text"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder={a.login.identifierPlaceholder}
                 autoComplete="username"
                 required
@@ -91,9 +75,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {error && (
-              <p className="field-error">{a.login.errors[error] || a.login.errors.invalid_credentials}</p>
-            )}
+            {error && <p className="field-error" role="alert">{error}</p>}
 
             <button type="submit" className="btn btn-dark" style={{ width: '100%' }} disabled={submitting}>
               {submitting ? a.login.submitting : a.login.submit}
@@ -101,11 +83,8 @@ export default function LoginPage() {
 
             <div className="auth-links">
               <a href="#/forgot-password">{a.login.forgotPassword}</a>
-              <a href="#/recover-username">{a.login.forgotUsername}</a>
             </div>
-            <p className="auth-switch">
-              {a.login.noAccount} <a href="#/register">{a.login.createAccount}</a>
-            </p>
+            <p className="auth-switch">{a.login.inviteOnly}</p>
           </form>
         </div>
       </section>

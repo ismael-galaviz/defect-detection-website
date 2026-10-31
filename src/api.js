@@ -24,7 +24,11 @@ async function request(method, path, body) {
     throw new ApiError(0, 'network')
   }
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new ApiError(res.status, data.error || 'server_error', data.fields || {})
+  if (!res.ok) {
+    const err = new ApiError(res.status, data.error || 'server_error', data.fields || {})
+    if (data.retry_after) err.retry_after = data.retry_after
+    throw err
+  }
   return data
 }
 

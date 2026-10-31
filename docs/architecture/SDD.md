@@ -150,14 +150,12 @@ No router library. `useRoute()` (top of `App.jsx`) reads `window.location.hash`,
 | `#/about` | `about` → renders `<AboutPage/>` |
 | `#/privacy` | `privacy` → renders `<PrivacyPolicyPage/>` |
 | `#/login` | `login` → renders `<LoginPage/>` |
-| `#/register` | `register` → renders `<RegisterPage/>` |
-| `#/verify-email` (+ `?token=`) | `verify-email` → renders `<VerifyEmailPage/>` |
+| `#/accept-invite?token=` | `accept-invite` → renders `<AcceptInvitePage/>` (link from a staff invite email) |
 | `#/forgot-password` (+ optional `?token=`) | `forgot-password` → renders `<ForgotPasswordPage/>` (request view if no token, reset view if a token is present) |
-| `#/recover-username` | `recover-username` → renders `<RecoverUsernamePage/>` |
-| `#/vision-home` | `vision-home` → renders `<VisionHomePage/>` (redirects to `#/login` client-side if there's no session — see §14) |
+| `#/vision-home` | `vision-home` → renders `<VisionHomePage/>` (redirects to `#/login` if the API says there's no session — see §14) |
 | anything else (incl. plain `#section-id` anchors) | `home` → renders the full home-page section stack |
 
-All ten non-`home` route names are collected in the `SATELLITE_ROUTES` array (top of `App.jsx`, right
+All eight non-`home` route names are collected in the `SATELLITE_ROUTES` array (top of `App.jsx`, right
 above `useRoute()`) so the scroll-to-top effect below and any future "is this a satellite page" check
 stay in sync with one list instead of a repeated `route === 'x' || route === 'y' || ...` chain.
 
@@ -168,7 +166,7 @@ On route change, `Site()`'s `useEffect`:
 - otherwise (route `home`), if the current hash is a plain anchor (doesn't start with `#/`), scrolls
   that element into view via `document.getElementById(hash.slice(1))?.scrollIntoView()`.
 
-**Query strings on hash routes:** `#/verify-email?token=...` and `#/forgot-password?token=...` carry a
+**Query strings on hash routes:** `#/accept-invite?token=...` and `#/forgot-password?token=...` carry a
 token as a query string appended directly to the hash fragment (not a "real" URL query string, since
 everything after `#` is opaque to the browser/server — this is a static site with no server-side
 routing anyway). Each page reads it with a small `getTokenFromHash()` helper:
@@ -1395,11 +1393,9 @@ casually reverse them without the user re-confirming — re-litigating them wast
   `<a>`, specifically because no company LinkedIn page was provided (see §10.26). Wire it up as a real
   link (and probably add `target="_blank" rel="noopener noreferrer"`, matching the WhatsApp link
   pattern) as soon as the user gives you the actual URL — don't fabricate one.
-- **The entire customer portal (§14) is a client-only simulation, not a real backend.** This is the
-  single biggest gap added this round — see §14.8 for the full breakdown (no real server, no real email
-  delivery, SHA-256-in-JS instead of bcrypt/Argon2, client-side-only and trivially bypassable rate
-  limiting, no audit log, no HttpOnly/Secure/SameSite session cookies since there's no server to set
-  them). Read §14.8 before telling a user any part of the auth flow is "production-ready."
+- **Customer portal accounts are real (§14, Story 3); support tickets are not yet.** Invite-only
+  sign-in, password reset, sessions and Vision Home data come from the backend. The Vision Home
+  support-ticket form is still client-only until Story 4.
 
 ---
 
@@ -1438,202 +1434,59 @@ Features go through Spec Kit (`specs/NNN-name/`, see `CLAUDE.md`); small fixes g
 
 ---
 
-## 14. Customer Portal (Login / Register / Recovery / Vision Home)
+## 14. Customer Portal (Login / Invite / Recovery / Vision Home)
 
-### 14.1 What this is and why it's built the way it is
+### 14.1 What this is
+A real, invite-only customer portal (spec `specs/001-backend`, Story 3) backed by the FastAPI
+service in `server/` (`server/app/routes/auth.py`, `server/app/security.py`). There is **no
+self-registration**: staff create companies and invite people with the CLI
+(`python -m app.cli invite --company … --email … --name … --lang es|en|fr`). Several users can
+belong to one company; all of them see the same company data. The email is the username.
 
-A full login → register → verify-email → forgot-password/recover-username → account-dashboard flow,
-added from a detailed client-supplied spec (security-conscious: generic non-enumerating error messages,
-rate limiting, token expiry, hashed passwords, HttpOnly/Secure session cookies, audit logs — the kind of
-spec you'd hand a team with a real backend). **This site has no backend and never has** (§2: static
-Vite build, deployed to Vercel, no server runtime at all) — so rather than silently
-dropping the request or blocking on "you need a backend first," the whole thing was built as a
-**client-only simulation**: a `localStorage`-backed "auth service" (`auth.js`) standing in for a real
-API, following the exact same precedent already established by the contact form and appointment picker
-(§11) — fully clickable, end-to-end testable, honest in the UI and in this document about what's real
-and what isn't. **Read §14.8 before presenting any part of this as production-ready to a user** — it is
-not, by design, and several of the spec's actual security requirements (bcrypt/Argon2, server-side rate
-limiting, audit logs, HttpOnly cookies) are architecturally impossible without a real backend.
+### 14.2 `auth.js` — the client side
+`src/auth.js` holds no credentials and no data store. The session is an **HttpOnly, Secure,
+SameSite=Lax cookie (`vx_session`, `Path=/api`)** that the browser sends to `/api` by itself;
+JavaScript can't read it. `auth.js` keeps the last `GET /api/me` answer in memory and exposes:
+- `useAuthSession()` → `{ status, me }` with `status` = `unknown` (checking) · `in` · `out` · `error`
+  (API unreachable). It checks the session once on first use; `Header` uses `me` to pick
+  "Log in" vs "My Account".
+- `login(email, password)` → `{ ok }` or `{ ok:false, error:'invalid_credentials'|'locked', minutes }`
+- `logout()`, `getInvite(token)`, `acceptInvite(token, password)`,
+  `requestPasswordReset(email, lang)`, `resetPassword(token, password)`
+- `passwordProblem(password, confirm)` — same rules as the server (≥12 chars, not on the common
+  list, confirmation matches), only for instant feedback; the server is authoritative.
 
-Routes: see the table in §4. Files: see §3 (`auth.js`, `LoginPage.jsx`, `RegisterPage.jsx`,
-`VerifyEmailPage.jsx`, `ForgotPasswordPage.jsx`, `RecoverUsernamePage.jsx`, `VisionHomePage.jsx`,
-`MexicoMap.jsx`, `mexicoMapData.js`). Translations: one top-level `auth` key in `translations.js` (both
-languages) — `navLogin`, `navAccount`, `dummy`, `login`, `register`, `verifyEmail`, `forgotPassword`,
-`resetPassword`, `recoverUsername`, `visionHome`. **Not reproduced verbatim in §9** (unlike the rest of
-the site's copy) — it's large and would bloat this document without much benefit; read `translations.js`
-directly for exact strings, and treat this section as the shape/behavior reference instead.
+### 14.3 Pages
+- **Login (`LoginPage.jsx`)** — email + password. Unknown email and wrong password show the same
+  message. After 5 failures in 15 min the account is locked for 15 min (message shows minutes).
+  Says accounts are by invitation; no "create account" or "forgot username" links.
+- **Accept invite (`AcceptInvitePage.jsx`, `#/accept-invite?token=`)** — shows company and email from
+  `GET /api/auth/invite/{token}`, sets the password, signs in, goes to Vision Home. Invite links last
+  7 days and work once; a used/expired one shows "ask for a new invitation".
+- **Forgot / reset password (`ForgotPasswordPage.jsx`)** — the request view always shows the same
+  confirmation (no account enumeration). The emailed link (`#/forgot-password?token=`, 30 min, single
+  use) opens the reset view; a successful reset signs the user out everywhere.
+- **Vision Home (`VisionHomePage.jsx`)** — loads `GET /api/me`: company name, subscriptions with status
+  (active/paused/cancelled), payment history newest first (entered by staff with
+  `python -m app.cli payment-add`; display only, no online payment). Empty and error states included.
 
-Shared visual pattern: every portal page uses the same `demo-hero` + `demo-section` shell as the other
-satellite pages (§7), with form content centered in a new `.auth-shell`/`.auth-card` wrapper
-(`.auth-card` just adds the `.lead-form` white-card look to a narrower, centered column). Password
-fields use a shared `.password-field`/`.password-toggle` pattern (`eye`/`eyeOff` icons, §6). Demo-mode
-disclosures use a shared `.dummy-panel` component style (amber, `flask` icon) across the dummy-login
-banner, the register/forgot-password "here's your verification/reset link" boxes, and the
-recover-username "here's your username" box.
+### 14.4 Staff administration
+No admin web UI. Everything is the CLI (`server/app/cli.py`, contract in
+`specs/001-backend/contracts/cli.md`): `company-add`, `invite`, `user-disable` / `user-enable`
+(disable ends the user's sessions immediately), `subscription-add` / `subscription-set`,
+`payment-add`, `list companies|users|pending`, `cleanup`. Run it against production with
+`railway run python -m app.cli …`. With `GOOGLE_FAKE=1` (local dev) emails, including invite and
+reset links, are printed to the log instead of sent.
 
-### 14.2 `auth.js` — the simulated backend
+### 14.5 Security summary
+Argon2id password hashes; link secrets and session ids stored only as SHA-256; server-side sessions
+(7 days absolute, 24 h idle); every query scoped to the user's company (other companies' records
+answer 404); Origin check on state-changing requests; audit rows (`audit_log`) for sign-in success/
+failure, sign-out, invite sent/accepted, reset requested/done and disable/enable.
 
-Everything is `localStorage`-backed, under `veritx-auth-*` keys:
-
-| key | shape | purpose |
-|---|---|---|
-| `veritx-auth-users` | `[{ firstName, lastName, email, username, passwordHash, verified, createdAt, account }]` | the "user table". `account` is `null` for every freshly registered user (§14.6's empty state) or a `{status, subscriptions, payments}` object. |
-| `veritx-auth-session` | `{ username, isDummy, loginAt } \| null` | the "session" — just a localStorage value, not a cookie (see §14.8). |
-| `veritx-auth-verify-tokens` | `[{ token, username, expiresAt }]` | 24h TTL. **Not deleted on successful verification** (see the StrictMode note below) — only pruned by expiry. |
-| `veritx-auth-reset-tokens` | `[{ token, username, expiresAt }]` | 30min TTL. Deleted on successful use (one-shot, unlike verify tokens — see below for why the two behave differently). |
-| `veritx-auth-attempts` | `{ [identifier]: { count, lockedUntil } }` | per-identifier failed-login counter for the rate-limit simulation. |
-
-Passwords are hashed with `crypto.subtle.digest('SHA-256', ...)` before being stored — **not a
-substitute for server-side bcrypt/Argon2** (no salt rounds, no memory-hardness; this is purely "don't
-keep raw plaintext sitting in localStorage," not real credential security) — see §14.8.
-
-**Dummy test login** (`test` / `vision`, per the original spec's "modo de prueba"): checked directly
-inside `login()`, gated behind `export const IS_DUMMY_LOGIN_ENABLED = import.meta.env.DEV`. This is a
-**real, load-bearing gate, not just a UI banner** — Vite replaces `import.meta.env.DEV` with the literal
-`false` at build time for a production build (`npm run build`, which is what
-Vercel runs — §2), so the entire dummy-login code path is dead code and unreachable on the live site,
-satisfying the spec's "must be fully disabled in production" requirement for real, not just cosmetically
-via a banner. It only actually works under `npm run dev`. A logged-in dummy session resolves (in
-`getCurrentUser()`) to a fixed in-memory `DEMO_ACCOUNT` (2 active subscriptions, 2 upcoming payments) so
-the "account assigned" state of Vision Home (§14.6) has something to render in dev without needing to
-register a real user first.
-
-**Rate limiting** (`login()`): after `MAX_ATTEMPTS = 5` failed attempts for the same identifier
-(email/username, lowercased), a 60s lockout is recorded in `veritx-auth-attempts` and further attempts
-return `{ok:false, error:'locked'}` until it expires. **This is client-side only and trivially
-bypassable** (clear `localStorage`, or just call `auth.js`'s exports directly from the console) — it
-exists to make the UI demonstrate the *behavior* the spec asked for, not to actually rate-limit anyone.
-Real rate limiting needs a backend. Flagged again in §14.8/§11.
-
-**Cross-component reactivity — `useAuthSession()`:** components (`Header()`, `VisionHomePage`) need to
-re-render when login/logout happens *in the same tab*, which a plain `localStorage` read on mount can't
-do (the browser's own `storage` event only fires in *other* tabs). `auth.js` keeps a small in-module
-`Set` of listener callbacks; `login()`/`logout()` call an internal `notifyAuthChange()` after writing to
-`veritx-auth-session`, and `useAuthSession()` (a hook, also exported from `auth.js`) subscribes to that
-set plus the cross-tab `storage` event, returning the current session and forcing a re-render on either
-signal. If you add a new place that needs to know "is someone logged in," use this hook — don't read
-`getSession()` once and cache it in local state, it'll go stale the moment the user logs in/out
-elsewhere on the page.
-
-**A real bug found and fixed during this build, worth knowing about if you touch `verifyEmailToken` or
-`ResetPasswordView` again:** `src/main.jsx` wraps the app in `React.StrictMode`, which **double-invokes
-effects in development** as a side-effect-detection aid (not present in production builds). Two spots
-in this codebase are/were sensitive to that:
-- `verifyEmailToken(token)` used to delete the token from `veritx-auth-verify-tokens` on success. Under
-  StrictMode, `VerifyEmailPage`'s mount effect ran twice: the first call verified and deleted the token;
-  the second call, immediately after, found no token and returned `'invalid'` — overwriting the
-  already-correct "success" UI state with an error, in dev only. **Fixed by making the function
-  idempotent instead of one-shot**: it now checks `if (!user.verified)` before flipping the flag and
-  never deletes the token (only expiry prunes it) — verifying an already-verified account is a no-op
-  success, not an error. This is also just more *correct* behavior on its own merits (a user re-clicking
-  an old confirmation email link, or a mail client prefetching the link, shouldn't see "invalid link"
-  for a token that already worked), not only a StrictMode workaround.
-- `ForgotPasswordPage`'s `ResetPasswordView` computed `const check = validateResetToken(token)` directly
-  in the render body. `resetPassword()` *does* delete the reset token on success (intentionally — unlike
-  verify tokens, a password-reset link should be genuinely one-shot). After a successful submit,
-  `setDone(true)` triggers a re-render, which re-ran `validateResetToken` against the now-deleted token
-  and got `invalid` — and since the component checked `!check.ok` before checking `done`, it showed
-  "this link is invalid or expired" instead of "password updated," even though the password change had
-  already succeeded. **Fixed by freezing `check` at mount** via `useState(() => validateResetToken(token))`
-  instead of recomputing it every render. General lesson for this codebase: **never call a
-  token-consuming `auth.js` function directly in a render body or in an effect without a stable
-  freeze/guard** — validity checks that have side effects (or that check state a submit handler is about
-  to mutate) need to be computed once, not on every re-render.
-
-### 14.3 Login (`LoginPage.jsx`)
-
-Fields: identifier (email or username) + password (with show/hide toggle). `IS_DUMMY_LOGIN_ENABLED`
-gates a `.dummy-panel` above the form with a "fill in test credentials" button (sets the fields to
-`test`/`vision` — doesn't auto-submit). Errors are looked up from `t.auth.login.errors` by the error
-code `login()` returns (`invalid_credentials`, `unverified`, `locked`) — generic on purpose, per the
-non-enumeration requirement in the original spec (never says which of email/username/password was
-wrong). Success navigates to `#/vision-home` via `window.location.hash = ...`.
-
-### 14.4 Register (`RegisterPage.jsx`) + email verification (`VerifyEmailPage.jsx`)
-
-Fields: first name, last name, email, username, password, confirm password. Client-side validation
-(`isValidEmail`, `isValidUsername`, `isPasswordCommon`, password length ≥ 12, confirm-match) runs
-before calling `registerUser()`. **Email uniqueness is enumeration-safe** (a duplicate email still
-returns `{ok:true}` with no verification token, so the UI can't distinguish "sent" from "already
-registered" — matching the spec's "don't reveal if an email exists" requirement); **username
-uniqueness is not** (`{ok:false, error:'username_taken'}`, shown inline) — this asymmetry is
-intentional and mirrors the source spec, which treats username availability as normal expected UX (like
-any signup form) but treats email existence as sensitive.
-
-On success, the page shows a "check your email" screen with `t.auth.register.successBody`, and —
-**because there is no real email service** — a `.dummy-panel` showing the actual
-`#/verify-email?token=...` link directly in the page (always shown when a token exists, not gated to
-`IS_DUMMY_LOGIN_ENABLED`, since without it there's no way to complete the flow in this demo at all — the
-gate only controls the fixed `test`/`vision` shortcut credentials, not the general "no backend" reality
-of the rest of the portal). `VerifyEmailPage` reads the token from the hash query string, calls
-`verifyEmailToken()` (idempotent — §14.2), and shows success/error accordingly.
-
-### 14.5 Forgot password / recover username (`ForgotPasswordPage.jsx`, `RecoverUsernamePage.jsx`)
-
-`ForgotPasswordPage` is **one component covering two views**, switched on whether `?token=` is present
-in the hash: no token → `RequestView` (identifier input, generic "if registered..." message + dev-panel
-reset link on submit); token present → `ResetPasswordView` (new password + confirm, blocked client-side
-below 12 chars / a common password / mismatch, then `resetPassword()` — which also calls `logout()`
-internally so any existing session is invalidated after a password change, and clears that identifier's
-rate-limit counter). `RecoverUsernamePage` is the simpler one-view equivalent for "I forgot my
-username" — email in, generic message + dev-panel showing the actual username out. Both request views
-return the same generic copy regardless of whether the identifier actually matched a user, per the
-non-enumeration requirement (§14.2/§14.4).
-
-**Scroll-into-view on every state transition:** all four success/result screens across these two files
-(register's "check your email," the two forgot-password result states, recover-username's result) use
-the same `resultRef`/`doneRef` + `useEffect(() => ref.current?.scrollIntoView({behavior:'smooth',
-block:'center'}), [state])` pattern already established for the contact form (§8's `Contact()` entry).
-Reason: these pages are short, but submitting can still shrink the visible content (a filled form
-collapsing to a couple of lines of success text) enough that, on a scrolled-down viewport, the result
-would otherwise render below the fold with the footer covering it — flagged explicitly during testing
-("cada vez que un formulario se completa, el footer le quita el espacio... haz scroll automático").
-Apply the same pattern to any new form/result transition added to these pages.
-
-### 14.6 Vision Home (`VisionHomePage.jsx`) — the account dashboard
-
-**Route guard:** not a real protected route (there's no server to enforce that) — a `useEffect` checks
-`useAuthSession()` on render and redirects to `#/login` if there's no session; the component returns
-`null` until a session exists, so there's no flash of dashboard content before the redirect fires.
-
-**Breadcrumb, not an eyebrow pill:** unlike every other satellite page (which use the `.eyebrow` pill in
-the dark `demo-hero` banner — §7), Vision Home uses a `.breadcrumb` ("Home / Vision Home") **inside the
-light `demo-section` content area**, above the dummy-panel/cards — not in the dark hero. This was an
-explicit two-step change: first the eyebrow pill was replaced with a breadcrumb, then the breadcrumb
-was moved out of the hero into the content section. If Vision Home ever needs breadcrumbs again
-elsewhere, follow this placement (content section, not hero) rather than the eyebrow-pill convention
-used everywhere else.
-
-**Two account states**, driven by `getCurrentUser().account`:
-- **No account** (`account === null` — the state every freshly registered real user starts in):
-  `.vh-empty-state` card, "You don't have an account assigned yet," with two CTAs that both link to
-  `#contact` (the *marketing* Contact section, on the `home` route) rather than opening any dashboard-
-  local form — reuses the site's one real lead-capture surface instead of duplicating it.
-- **Account assigned** (dummy test login always has one — `DEMO_ACCOUNT`, §14.2): a `.vh-grid` of three
-  cards — Active Subscriptions (list + count), Next Payment Date (soonest of `account.payments`, with a
-  "view all" toggle), Amount to Pay (next payment's amount, with a "view billing detail" toggle listing
-  subscription names). All dates/currency formatted via `Intl.DateTimeFormat`/`Intl.NumberFormat` for
-  the current `lang`.
-
-**Support + appointment cards** (below the state-dependent block above, shown regardless of account
-state): "Technical support" opens an inline `SupportTicketForm` (subject, description, priority select —
-**no file-attachment field**, since there's nowhere for an upload to go without a backend; flagged in
-§11/TODO) that on submit just flips local `sent` state, same no-backend pattern as everything else here.
-"Schedule a meeting" is a **plain link to `#contact`**, not a duplicated appointment widget — the
-marketing Contact section already has a full working `AppointmentPicker` (§10.17); this CTA deliberately
-reuses it instead of re-implementing a second calendar component inline. Don't build a second
-`AppointmentPicker` for Vision Home without a specific reason to diverge from the existing one.
-
-**Logout lives in the header's account dropdown, not on this page.** An earlier version had a standalone
-"Log out" button in Vision Home's own header row — **explicitly moved** into the `Header()` account
-dropdown (§8's `Header()` entry) after feedback that it belonged in a menu behind the account icon, not
-as a page-level button. The status badge ("Active"/"Trial"/"Pending assignment," `t.auth.visionHome.status`)
-that used to sit next to that button was also removed outright (not relocated) in the same pass — the
-`status`/`status-active`/`status-trial`/`status-pending` CSS and the badge markup are gone; the
-translation keys under `t.auth.visionHome.status` are still defined (reused by the subscription-list
-pills, `.vh-pill`) but nothing currently renders a page-level account-status badge. Don't re-add one
-without checking whether that omission was intentional (it was) or just re-add it as a
-`.vh-pill`-style badge if asked.
+### 14.6 Support tickets
+Story 4 in `specs/001-backend/spec.md`; until it ships, the ticket form in Vision Home is still
+client-only (it shows a success message but sends nothing).
 
 ### 14.7 Mexico locator map (`MexicoMap.jsx` / `mexicoMapData.js`)
 
@@ -1667,32 +1520,13 @@ retained), re-verify neighbor adjacency by distance rather than assuming it hasn
 re-tune `LABEL_OFFSET`. **Never hand-edit coordinates in `mexicoMapData.js` directly** — the `d` path
 strings are generated, not authored; treat the file as a build artifact.
 
-### 14.8 What's real vs. simulated — read before calling any of this "done"
-
-| Spec requirement | Status here |
-|---|---|
-| Dummy/test login disabled in production | ✅ Real — `import.meta.env.DEV` gate, dead-code-eliminated in prod builds (§14.2) |
-| Generic, non-enumerating error messages | ✅ Real UX behavior (client-side), though there's no server to enforce it against a determined attacker |
-| Password length / common-password checks | ✅ Real client-side checks (`isPasswordCommon` is a small hardcoded list, not a real breach-database lookup like HaveIBeenPwned) |
-| Passwords hashed, not stored in plaintext | ⚠️ Partial — SHA-256 via Web Crypto, client-side. **Not** bcrypt/Argon2 with per-user salt and tunable work factor; a real backend is required for that |
-| Email verification / password reset via token | ⚠️ Partial — real token generation (`crypto.getRandomValues`), real expiry, real one-shot consumption for reset tokens. **No real email is ever sent** — the token/link is shown directly in the UI in a labeled "demo mode" panel |
-| Rate limiting on failed logins | ⚠️ Partial — real UI/UX behavior, but enforced in `localStorage`, so trivially bypassed by clearing storage or calling `auth.js` directly. Real rate limiting needs a backend |
-| Session cookies with `Secure`/`HttpOnly`/`SameSite`, session-ID regeneration on login | ❌ Not applicable/implemented — there is no server to set cookies. "Session" is a `localStorage` value read by client JS, which is a fundamentally weaker model (readable/writable by any script on the page) than an HttpOnly cookie |
-| Audit logs (registration, login attempts, password/recovery events) | ❌ Not implemented — nothing is logged anywhere durable; `localStorage` state changes aren't an audit trail |
-| HTTPS everywhere | ✅ Real, but incidental — Vercel serves over HTTPS by default, not something this app configures itself |
-
-If a user asks to "make the login real" or "add a real backend," that's a substantially different,
-much larger project (an actual API + database + email service + hosting for that service) — not a
-tweak to the existing files. Flag that scope difference explicitly rather than trying to bolt real
-security onto the `localStorage` simulation.
+### 14.8 Removed in Story 3
+`RegisterPage.jsx`, `VerifyEmailPage.jsx`, `RecoverUsernamePage.jsx`, the localStorage "auth
+service", the SHA-256-in-JS hashing and the development demo login (`test` / `vision`) were deleted,
+with their routes and copy in all three languages.
 
 ### 14.9 Recipe: add a new customer-portal screen
-
-Follow the existing five pages as the template. Create `src/WhateverPortalPage.jsx` using the
-`demo-hero` + `demo-section` + `.auth-shell`/`.auth-card` shell (§14.1); add any new `auth.js` functions
-needed (keep the "generic message regardless of whether the identifier matched" pattern for anything
-recovery-related, and remember the StrictMode-idempotency lesson in §14.2 if the new screen consumes a
-token on mount); add a route branch in `useRoute()`/`Site()` and to the `SATELLITE_ROUTES` array (§4);
-add translations under `t.auth.whatever` in both languages (don't reproduce them in §9 — see §14.1); and
-if the new screen has a "did this action succeed" transition that can shrink the page's content, add the
-`resultRef`/`scrollIntoView` pattern from §14.5.
+Use the `demo-hero` + `demo-section` + `.auth-shell`/`.auth-card` shell of the existing pages; add
+the endpoint to `server/` first (with tests, and company scoping if it returns data), then a function
+in `src/auth.js` or a call through `src/api.js`; add a route branch in `useRoute()`/`Site()` and to
+`SATELLITE_ROUTES` (§4); add copy under `t.auth.whatever` in es/en/fr.

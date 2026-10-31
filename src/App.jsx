@@ -8,16 +8,14 @@ import DemoPage from './DemoPage.jsx'
 import CalculatorPage from './CalculatorPage.jsx'
 import AboutPage from './AboutPage.jsx'
 import LoginPage from './LoginPage.jsx'
-import RegisterPage from './RegisterPage.jsx'
-import VerifyEmailPage from './VerifyEmailPage.jsx'
+import AcceptInvitePage from './AcceptInvitePage.jsx'
 import ForgotPasswordPage from './ForgotPasswordPage.jsx'
-import RecoverUsernamePage from './RecoverUsernamePage.jsx'
 import VisionHomePage from './VisionHomePage.jsx'
 import PrivacyPolicyPage from './PrivacyPolicyPage.jsx'
 
 const SATELLITE_ROUTES = [
   'demo', 'calculator', 'about', 'privacy',
-  'login', 'register', 'verify-email', 'forgot-password', 'recover-username', 'vision-home',
+  'login', 'accept-invite', 'forgot-password', 'vision-home',
 ]
 
 function useRoute() {
@@ -32,10 +30,8 @@ function useRoute() {
   if (hash.startsWith('#/about')) return 'about'
   if (hash.startsWith('#/privacy')) return 'privacy'
   if (hash.startsWith('#/login')) return 'login'
-  if (hash.startsWith('#/register')) return 'register'
-  if (hash.startsWith('#/verify-email')) return 'verify-email'
+  if (hash.startsWith('#/accept-invite')) return 'accept-invite'
   if (hash.startsWith('#/forgot-password')) return 'forgot-password'
-  if (hash.startsWith('#/recover-username')) return 'recover-username'
   if (hash.startsWith('#/vision-home')) return 'vision-home'
   return 'home'
 }
@@ -106,7 +102,7 @@ function MobileAccordion({ label, items, onNavigate }) {
 
 function Header() {
   const { t } = useLanguage()
-  const session = useAuthSession()
+  const session = useAuthSession().me
   const [menuOpen, setMenuOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState(null)
   const navRef = useRef(null)
@@ -135,9 +131,9 @@ function Header() {
     setOpenDropdown((cur) => (cur === name ? null : name))
   }
 
-  function handleLogout() {
-    logout()
+  async function handleLogout() {
     setOpenDropdown(null)
+    await logout()
     window.location.hash = '#/login'
   }
 
@@ -863,10 +859,8 @@ function Site() {
       {route === 'about' && <AboutPage />}
       {route === 'privacy' && <PrivacyPolicyPage />}
       {route === 'login' && <LoginPage />}
-      {route === 'register' && <RegisterPage />}
-      {route === 'verify-email' && <VerifyEmailPage />}
+      {route === 'accept-invite' && <AcceptInvitePage />}
       {route === 'forgot-password' && <ForgotPasswordPage />}
-      {route === 'recover-username' && <RecoverUsernamePage />}
       {route === 'vision-home' && <VisionHomePage />}
       {route === 'home' && (
         <>

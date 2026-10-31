@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLanguage, localeFor } from './i18n.jsx'
 import { Icon } from './icons.jsx'
-import { useAuthSession, getCurrentUser, IS_DUMMY_LOGIN_ENABLED } from './auth.js'
+import { useAuthSession } from './auth.js'
 
 function formatDate(iso, lang) {
   return new Intl.DateTimeFormat(localeFor(lang), {
@@ -12,7 +12,7 @@ function formatDate(iso, lang) {
 }
 
 function formatCurrency(amount, currency, lang) {
-  return new Intl.NumberFormat(localeFor(lang), { style: 'currency', currency }).format(amount)
+  return new Intl.NumberFormat(localeFor(lang), { style: 'currency', currency }).format(Number(amount))
 }
 
 function SupportTicketForm({ s }) {
@@ -70,28 +70,38 @@ function SupportTicketForm({ s }) {
 export default function VisionHomePage() {
   const { t, lang } = useLanguage()
   const v = t.auth.visionHome
-  const session = useAuthSession()
+  const { status, me } = useAuthSession()
   const [showAllPayments, setShowAllPayments] = useState(false)
-  const [showBillingDetail, setShowBillingDetail] = useState(false)
   const [supportOpen, setSupportOpen] = useState(false)
 
   useEffect(() => {
-    if (!session) window.location.hash = '#/login'
-  }, [session])
+    if (status === 'out') window.location.hash = '#/login'
+  }, [status])
 
-  if (!session) return null
-  const user = getCurrentUser()
-  if (!user) return null
+  if (status !== 'in') {
+    return (
+      <main>
+        <section className="demo-section">
+          <div className="container">
+            {status === 'error'
+              ? <div className="field-error-panel" role="alert"><p>{v.loadError}</p></div>
+              : <p role="status">{v.loading}</p>}
+          </div>
+        </section>
+      </main>
+    )
+  }
 
-  const account = user.account
-  const payments = account ? [...account.payments].sort((a, b) => a.date.localeCompare(b.date)) : []
-  const nextPayment = payments[0]
+  const { user, subscriptions, payments } = me
+  const activeCount = subscriptions.filter((s) => s.status === 'active').length
+  const lastPayment = payments[0] // newest first, from the API
 
   return (
     <main>
       <section className="demo-hero">
         <div className="container">
-          <h1>{v.greeting.replace('{name}', user.firstName)}</h1>
+          <span className="eyebrow">{me.company.name}</span>
+          <h1>{v.greeting.replace('{name}', user.name.split(' ')[0])}</h1>
         </div>
       </section>
 
@@ -103,23 +113,12 @@ export default function VisionHomePage() {
             <span aria-current="page">{v.eyebrow}</span>
           </nav>
 
-          {IS_DUMMY_LOGIN_ENABLED && user.isDummy && (
-            <div className="dummy-panel">
-              <div className="dummy-panel-head">
-                <Icon name="flask" size={18} />
-                <strong>{t.auth.dummy.bannerTitle}</strong>
-              </div>
-              <p>{t.auth.dummy.bannerBody}</p>
-            </div>
-          )}
-
-          {!account ? (
+          {subscriptions.length === 0 ? (
             <div className="vh-empty-state">
               <h2>{v.noAccount.title}</h2>
               <p>{v.noAccount.body}</p>
               <div className="vh-empty-actions">
                 <a className="btn btn-dark" href="#contact">{v.noAccount.contactAgent}</a>
-                <a className="btn btn-outline" href="#contact">{v.noAccount.scheduleSales}</a>
               </div>
             </div>
           ) : (
@@ -127,10 +126,10 @@ export default function VisionHomePage() {
               <div className="vh-card">
                 <div className="vh-card-icon"><Icon name="clipboard" /></div>
                 <div className="vh-card-label">{v.subscriptions.title}</div>
-                <div className="vh-card-value">{v.subscriptions.count.replace('{count}', account.subscriptions.length)}</div>
+                <div className="vh-card-value">{v.subscriptions.count.replace('{count}', activeCount)}</div>
                 <ul className="vh-sub-list">
-                  {account.subscriptions.map((sub) => (
-                    <li key={sub.name}>
+                  {subscriptions.map((sub, i) => (
+                    <li key={i}>
                       <span>{sub.name}</span>
                       <span className="vh-pill">{v.status[sub.status]}</span>
                     </li>
@@ -140,33 +139,27 @@ export default function VisionHomePage() {
 
               <div className="vh-card">
                 <div className="vh-card-icon"><Icon name="clock" /></div>
-                <div className="vh-card-label">{v.nextPayment.title}</div>
-                <div className="vh-card-value">{v.nextPayment.label} {formatDate(nextPayment.date, lang)}</div>
-                {payments.length > 1 && (
-                  <button type="button" className="vh-link-btn" onClick={() => setShowAllPayments((s) => !s)}>
-                    {v.nextPayment.viewAll}
-                  </button>
-                )}
-                {showAllPayments && (
-                  <ul className="vh-detail-list">
-                    {payments.map((p) => (
-                      <li key={p.date}>{formatDate(p.date, lang)} — {formatCurrency(p.amount, p.currency, lang)}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div className="vh-card">
-                <div className="vh-card-icon"><Icon name="percent" /></div>
-                <div className="vh-card-label">{v.amountDue.title}</div>
-                <div className="vh-card-value">{formatCurrency(nextPayment.amount, nextPayment.currency, lang)}</div>
-                <button type="button" className="vh-link-btn" onClick={() => setShowBillingDetail((s) => !s)}>
-                  {v.amountDue.viewDetail}
-                </button>
-                {showBillingDetail && (
-                  <ul className="vh-detail-list">
-                    {account.subscriptions.map((sub) => <li key={sub.name}>{sub.name}</li>)}
-                  </ul>
+                <div className="vh-card-label">{v.payments.title}</div>
+                {lastPayment ? (
+                  <>
+                    <div className="vh-card-value">
+                      {v.payments.last}: {formatDate(lastPayment.paid_on, lang)} — {formatCurrency(lastPayment.amount, lastPayment.currency, lang)}
+                    </div>
+                    {payments.length > 1 && (
+                      <button type="button" className="vh-link-btn" onClick={() => setShowAllPayments((s) => !s)}>
+                        {v.payments.viewAll}
+                      </button>
+                    )}
+                    {showAllPayments && (
+                      <ul className="vh-detail-list">
+                        {payments.map((p, i) => (
+                          <li key={i}>{formatDate(p.paid_on, lang)} — {formatCurrency(p.amount, p.currency, lang)}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                ) : (
+                  <p>{v.payments.empty}</p>
                 )}
               </div>
             </div>

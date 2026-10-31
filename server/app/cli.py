@@ -6,6 +6,7 @@ Run against production with: railway run python -m app.cli <command>
 import argparse
 import http.server
 import json
+import logging
 import os
 import sys
 import urllib.parse
@@ -323,6 +324,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None, google=None) -> int:
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     try:
         args = build_parser().parse_args(argv)
     except SystemExit as e:  # argparse error or --help

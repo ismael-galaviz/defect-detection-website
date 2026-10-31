@@ -1,45 +1,50 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import { isValidEmail, isValidUsername, login, registerUser, verifyEmailToken } from './auth.js'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as auth from './auth.js'
 
-// Minimal in-memory localStorage: the auth simulation only needs get/set/remove.
-beforeEach(() => {
-  const store = new Map()
-  globalThis.localStorage = {
-    getItem: (k) => (store.has(k) ? store.get(k) : null),
-    setItem: (k, v) => store.set(k, String(v)),
-    removeItem: (k) => store.delete(k),
-  }
-})
+function respond(status, body = {}) {
+  return { ok: status < 400, status, json: async () => body }
+}
 
-const user = { firstName: 'Ana', lastName: 'Ruiz', email: 'ana@example.com', username: 'ana.ruiz', password: 'a-long-password-1' }
+beforeEach(() => auth._resetForTests())
+afterEach(() => vi.unstubAllGlobals())
 
-describe('auth validators', () => {
-  it('validates emails and usernames', () => {
-    expect(isValidEmail(' ana@example.com ')).toBe(true)
-    expect(isValidEmail('ana@example')).toBe(false)
-    expect(isValidUsername('ana.ruiz')).toBe(true)
-    expect(isValidUsername('ab')).toBe(false)
+describe('passwordProblem', () => {
+  it('mirrors the server policy for instant feedback', () => {
+    expect(auth.passwordProblem('short', 'short')).toBe('passwordShort')
+    expect(auth.passwordProblem('password123456', 'password123456')).toBe('passwordCommon')
+    expect(auth.passwordProblem('correct horse battery', 'correct horse batterx')).toBe('passwordMismatch')
+    expect(auth.passwordProblem('correct horse battery', 'correct horse battery')).toBe(null)
   })
 })
 
-describe('register → verify → login', () => {
-  it('blocks login until the email is verified', async () => {
-    const { token } = await registerUser(user)
-    expect(await login(user.username, user.password)).toEqual({ ok: false, error: 'unverified' })
-    expect(verifyEmailToken(token)).toEqual({ ok: true })
-    expect(await login(user.email, user.password)).toEqual({ ok: true })
+describe('session state', () => {
+  it('signs in, loads /me, and signs out', async () => {
+    const me = { user: { name: 'Ana' }, company: { name: 'X' }, subscriptions: [], payments: [], tickets: [] }
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(respond(204))
+      .mockResolvedValueOnce(respond(200, me))
+      .mockResolvedValueOnce(respond(204))
+    vi.stubGlobal('fetch', fetch)
+
+    expect(await auth.login(' Ana@Example.com ', 'pw')).toEqual({ ok: true })
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ email: 'ana@example.com', password: 'pw' })
+    expect(auth.getAuthState()).toEqual({ status: 'in', me })
+
+    await auth.logout()
+    expect(auth.getAuthState()).toEqual({ status: 'out', me: null })
   })
 
-  it('does not reveal an already-registered email', async () => {
-    await registerUser(user)
-    expect(await registerUser({ ...user, username: 'other.user' })).toEqual({ ok: true })
+  it('reports lockout with minutes to wait', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(respond(429, { error: 'locked', retry_after: 61 })))
+    expect(await auth.login('a@b.co', 'pw')).toEqual({ ok: false, error: 'locked', minutes: 2 })
   })
 
-  it('locks the account after 5 failed attempts', async () => {
-    const { token } = await registerUser(user)
-    verifyEmailToken(token)
-    for (let i = 0; i < 4; i++) await login(user.username, 'wrong')
-    expect((await login(user.username, 'wrong')).error).toBe('locked')
-    expect((await login(user.username, user.password)).error).toBe('locked')
+  it('treats 401 from /me as signed out and other failures as an error', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(respond(401, { error: 'unauthenticated' })))
+    await auth.refreshSession()
+    expect(auth.getAuthState().status).toBe('out')
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')))
+    await auth.refreshSession()
+    expect(auth.getAuthState().status).toBe('error')
   })
 })

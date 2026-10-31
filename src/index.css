@@ -1461,35 +1461,6 @@ form.auth-card { margin: 0; }
 }
 .btn-outline:hover { border-color: var(--cyan-dark); color: var(--cyan-dark); }
 
-.dummy-panel {
-  background: rgba(255, 179, 0, 0.08);
-  border: 1px solid rgba(255, 179, 0, 0.35);
-  border-radius: 10px;
-  padding: 16px 18px;
-  margin-bottom: 20px;
-}
-.dummy-panel-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #92660a;
-  margin-bottom: 6px;
-}
-.dummy-panel p { margin: 0 0 10px; color: var(--gray-700); font-size: 13.5px; line-height: 1.6; }
-.dummy-panel .btn-outline { font-size: 13px; padding: 9px 16px; }
-.dev-panel-link {
-  display: block;
-  word-break: break-all;
-  color: var(--cyan-dark);
-  font-size: 13px;
-  font-weight: 600;
-}
-.dev-panel-value {
-  margin: 0;
-  font-weight: 700;
-  color: var(--navy);
-  font-size: 15px;
-}
 .field-error-panel {
   background: rgba(220, 38, 38, 0.06);
   border: 1px solid rgba(220, 38, 38, 0.25);

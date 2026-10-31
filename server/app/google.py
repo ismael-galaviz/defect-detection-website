@@ -126,7 +126,8 @@ class FakeGoogle:
         self._check()
         self.sent.append({"to": to, "subject": subject, "text": text, "reply_to": reply_to,
                           "attachments": list(attachments)})
-        log.info("fake email", extra={"to": to, "subject": subject})
+        # Full text so local developers can follow invite/reset links (GOOGLE_FAKE=1 only).
+        log.info("fake email to %s: %s\n%s", to, subject, text)
 
     def busy_intervals(self, start, end):
         self._check()

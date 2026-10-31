@@ -103,11 +103,11 @@ Phases 1–2 ship inside PR 1 together with US1.
 - [X] T036 [US3] Implement `server/app/security.py`: hashing, token and session helpers, `current_user` dependency (validates cookie, idle/absolute expiry, updates `last_seen_at`), audit helper, login-lockout and reset-limit queries (R6)
 - [X] T037 [US3] Implement `server/app/routes/auth.py`: `/api/auth/login`, `/logout`, `/invite/{token}`, `/accept-invite`, `/forgot`, `/reset`, and `GET /api/me` per contracts/api.md; invite/reset emails in user's lang in `server/app/emails.py`
 - [X] T038 [US3] Add CLI commands `company-add`, `invite`, `user-disable`, `user-enable`, `subscription-add`, `subscription-set`, `payment-add`, `list companies|users`, `cleanup` (sessions/tokens) in `server/app/cli.py`
-- [ ] T039 [US3] Rewrite `src/auth.js` to call the API (`login`, `logout`, `getInvite`, `acceptInvite`, `requestPasswordReset`, `resetPassword`, `fetchMe`) keeping `useAuthSession()`'s shape; remove localStorage auth, `IS_DUMMY_LOGIN_ENABLED`, `DEMO_ACCOUNT`; replace `src/auth.test.js` with tests of the remaining pure helpers (e.g. `isValidEmail`) or delete if none remain
-- [ ] T040 [US3] Create `src/AcceptInvitePage.jsx` (`#/accept-invite?token=`: show email/company, set password, sign in) and route it in `src/App.jsx`
-- [ ] T041 [US3] Update `src/LoginPage.jsx` (email only, "accounts are by invitation" note, error codes) and `src/ForgotPasswordPage.jsx` (request + reset via API)
-- [ ] T042 [US3] Update `src/VisionHomePage.jsx` to load `GET /api/me` (loading, empty and error states; 401 → redirect to login)
-- [ ] T043 [US3] Delete `src/RegisterPage.jsx`, `src/RecoverUsernamePage.jsx`, `src/VerifyEmailPage.jsx`, their routes and links in `src/App.jsx`, and their copy in `src/translations.js` (all three languages); add new copy in es/en/fr
+- [X] T039 [US3] Rewrite `src/auth.js` to call the API (`login`, `logout`, `getInvite`, `acceptInvite`, `requestPasswordReset`, `resetPassword`, `fetchMe`) keeping `useAuthSession()`'s shape; remove localStorage auth, `IS_DUMMY_LOGIN_ENABLED`, `DEMO_ACCOUNT`; replace `src/auth.test.js` with tests of the remaining pure helpers (e.g. `isValidEmail`) or delete if none remain
+- [X] T040 [US3] Create `src/AcceptInvitePage.jsx` (`#/accept-invite?token=`: show email/company, set password, sign in) and route it in `src/App.jsx`
+- [X] T041 [US3] Update `src/LoginPage.jsx` (email only, "accounts are by invitation" note, error codes) and `src/ForgotPasswordPage.jsx` (request + reset via API)
+- [X] T042 [US3] Update `src/VisionHomePage.jsx` to load `GET /api/me` (loading, empty and error states; 401 → redirect to login)
+- [X] T043 [US3] Delete `src/RegisterPage.jsx`, `src/RecoverUsernamePage.jsx`, `src/VerifyEmailPage.jsx`, their routes and links in `src/App.jsx`, and their copy in `src/translations.js` (all three languages); add new copy in es/en/fr
 
 **Checkpoint**: quickstart step 3 passes → **PR 3** (`Closes #8` partially: accounts; ticket part in PR 4).
 

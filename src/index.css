@@ -1,3 +1,12 @@
+/* Inter variable (wght 100–900), self-hosted Latin subset: no third-party request. License: /fonts/Inter-LICENSE.txt */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/Inter-latin.woff2') format('woff2');
+}
+
 :root {
   --navy: #0B1F3A;
   --navy-light: #12315c;

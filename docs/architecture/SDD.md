@@ -298,8 +298,10 @@ CSS custom properties, defined on `:root` in `index.css`:
 ```
 
 Font: `'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif`
-(no font is actually loaded/imported — this falls back to system fonts since Inter isn't linked
-anywhere; cosmetic gap, not a bug per se).
+Inter is self-hosted: `public/fonts/Inter-latin.woff2` (Inter 4.1 variable font, weights 100–900,
+subset to Latin/Latin-1 plus the few symbols the copy uses, ~100 KB; OFL license alongside it) is
+declared with `@font-face` at the top of `index.css`, `font-display: swap`. Self-hosted rather than
+Google Fonts so the Privacy Policy's "no third-party requests" stays true.
 
 **Section vertical padding** — base rule `section { padding: 77px 0; }`. This value (and the hero's
 `80px 0 96px`, the demo/calculator/about hero's `58px 0`, and their content section's `51px 0 77px`)
@@ -1387,8 +1389,6 @@ casually reverse them without the user re-confirming — re-litigating them wast
   tracking/analytics, the `youtube-nocookie.com` embed, and the WhatsApp link being governed by its
   own policy. **"Terms of Service"/"Términos de servicio" is still a plain `<span>`** — no
   terms-of-service page exists yet (separate TODO item, not done in this pass).
-- **No web font is actually loaded** — `index.css` requests `'Inter'` first in the font stack, but
-  nothing imports/links Inter, so every browser silently falls back to its next system font.
 - **Minimal automated tests only** (calculator formulas, `auth.js`); no UI tests, no linter/formatter.
 - **The footer's LinkedIn icon has no real URL** — rendered as a non-interactive `<span>`, not an
   `<a>`, specifically because no company LinkedIn page was provided (see §10.26). Wire it up as a real
